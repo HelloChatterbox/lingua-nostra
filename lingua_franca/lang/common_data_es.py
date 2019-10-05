@@ -46,6 +46,7 @@ _FEMALE_DETERMINANTS_ES = ["la", "las", "esta", "estas", "esa", "esas"]
 _NUMBERS_ES = {
     "cero": 0,
     "un": 1,
+    "uno": 1,
     "una": 1,
     "unos": 1,
     "unas": 1,
