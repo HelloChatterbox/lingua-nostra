@@ -49,6 +49,30 @@ import datetime
 import re
 
 
+def singularize(word, lang=None):
+    lang_code = get_primary_lang_code(lang)
+    if lang_code == "en":
+        return singularize_en(word)
+    elif lang_code == "pt":
+        return singularize_pt(word)
+
+    # TODO: Other languages
+    _log_unsupported_language(lang_code, ['en', 'pt'])
+    return word
+
+
+def pluralize(word, lang=None):
+    lang_code = get_primary_lang_code(lang)
+    if lang_code == "en":
+        return pluralize_en(word)
+    elif lang_code == "pt":
+        return pluralize_pt(word)
+
+    # TODO: Other languages
+    _log_unsupported_language(lang_code, ['en', 'pt'])
+    return word
+
+
 def _translate_word(name, lang):
     """ Helper to get word tranlations
 

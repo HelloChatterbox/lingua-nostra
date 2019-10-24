@@ -31,6 +31,7 @@ from lingua_franca.format import pronounce_number
 from lingua_franca.format import date_time_format
 from lingua_franca.format import join_list
 from lingua_franca.format import nice_bytes
+from lingua_franca.format import singularize, pluralize
 
 NUMBERS_FIXTURE_EN = {
     1.435634: '1.436',
@@ -55,7 +56,7 @@ NUMBERS_FIXTURE_EN = {
     8.384: '8 and 5 thirteenths',
     0.071: 'a fourteenth',
     6.466: '6 and 7 fifteenths',
-    8.312: '8 and 5 sixteenths',
+    8.312: '8 and 5 sixteenths',feat/nice_bytes
     2.176: '2 and 3 seventeenths',
     200.722: '200 and 13 eighteenths',
     7.421: '7 and 8 nineteenths',
@@ -272,12 +273,12 @@ class TestPronounceNumber(unittest.TestCase):
                                         "power of negative one hundred "
                                         "and fifty")
         # value is platform dependent so better not use in tests?
-        #self.assertEqual(
+        # self.assertEqual(
         #    pronounce_number(sys.float_info.min), "two point two two times "
         #                                          "ten to the power of "
         #                                          "negative three hundred "
         #                                          "and eight")
-        #self.assertEqual(
+        # self.assertEqual(
         #    pronounce_number(sys.float_info.max), "one point seven nine "
         #                                          "times ten to the power of"
         #                                          " three hundred and eight")
@@ -640,6 +641,35 @@ class TestNiceDateFormat(unittest.TestCase):
         self.assertEqual(join_list(["a", "b", "c", "d"], "or"), "a, b, c or d")
 
         self.assertEqual(join_list([1, "b", 3, "d"], "or"), "1, b, 3 or d")
+
+
+class TestInflection(unittest.TestCase):
+    def test_singularize(self):
+        self.assertEqual(singularize("posts"), "post")
+        self.assertEqual(singularize("octopi"), "octopus")
+        self.assertEqual(singularize("sheep"), "sheep")
+        # test already singular
+        self.assertEqual(singularize("word"), "word")
+        # test garbage
+        self.assertEqual(singularize("CamelOctopi"), "CamelOctopus")
+
+    def test_pluralize(self):
+        self.assertEqual(pluralize("post"), "posts")
+        self.assertEqual(pluralize("octopus"), "octopi")
+        self.assertEqual(pluralize("sheep"), "sheep")
+        # test already plural
+        self.assertEqual(pluralize("words"), "words")
+        # irregular verbs
+        self.assertEqual(pluralize("person"), "people")
+        self.assertEqual(pluralize("man"), "men")
+        self.assertEqual(pluralize("human"), "humans")
+        self.assertEqual(pluralize('child'), 'children')
+        self.assertEqual(pluralize('sex'), 'sexes')
+        self.assertEqual(pluralize('move'), 'moves')
+        self.assertEqual(pluralize('cow'), 'kine')
+        self.assertEqual(pluralize('zombie'), 'zombies')
+        # test garbage
+        self.assertEqual(pluralize("CamelOctopus"), "CamelOctopi")
 
 
 if __name__ == "__main__":
