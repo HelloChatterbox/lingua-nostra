@@ -269,6 +269,59 @@ date_time_format = DateTimeFormat(os.path.join(os.path.dirname(__file__),
                                                'res/text'))
 
 
+def nice_bytes(number, lang=None, speech=True, binary=True, gnu=False, places=1):
+    """
+    turns a number of bytes into a string using appropriate units
+
+    prefixes - https://en.wikipedia.org/wiki/Binary_prefix
+    spoken binary units - https://en.wikipedia.org/wiki/Kibibyte
+    implementation - http://stackoverflow.com/a/1094933/2444609
+
+    :param number: number of bytes (int)
+    :param lang: lang_code, ignored for now (str)
+    :param speech: spoken form (True) or short units (False)
+    :param binary: 1 kilobyte = 1024 bytes (True) or 1 kilobyte = 1000 bytes (False)
+    :param gnu: say only order of magnitude (bool)  - 100 Kilo (True) or 100 Kilobytes (False)
+    :param places: decimal places (int), TODO not yet implemented
+    :return: nice bytes (str)
+    """
+    lang_code = get_primary_lang_code(lang)
+
+    if speech and gnu:
+        default_units = ['Bytes', 'Kilo', 'Mega', 'Giga', 'Tera', 'Peta', 'Exa', 'Zetta', 'Yotta']
+    elif speech and binary:
+        default_units = ['Bytes', 'Kibibytes', 'Mebibytes', 'Gibibytes',
+                         'Tebibytes', 'Pebibytes', 'Exbibytes', 'Zebibytes', 'Yobibytes']
+    elif speech:
+        default_units = ['Bytes', 'Kilobytes', 'Megabytes', 'Gigabytes',
+                         'Terabytes', 'Petabytes', 'Exabytes', 'Zettabytes', 'Yottabytes']
+    elif gnu:
+        default_units = ['B', 'K', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y']
+    elif binary:
+        default_units = ['B', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB', 'ZiB', 'YiB']
+    else:
+        default_units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
+
+    #if lang_code == "XX":
+    #    units = ['...']
+    #else:
+    units = default_units
+
+    if binary:
+        n = 1024
+    else:
+        n = 1000
+
+    for unit in units[:-1]:
+        if abs(number) < n:
+            if number == 1 and speech and not gnu:
+                # strip final "s"
+                unit = unit[:-1]
+            return "%3.1f %s" % (number, unit)
+        number /= n
+    return "%.1f %s" % (number, units[-1])
+
+
 def nice_number(number, lang=None, speech=True, denominators=None):
     """Format a float to human readable functions
 
