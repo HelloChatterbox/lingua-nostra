@@ -157,12 +157,12 @@ class TestNormalize(unittest.TestCase):
         self.assertEqual(extract_duration("7.5 seconds"),
                          (timedelta(seconds=7.5), ""))
         self.assertEqual(extract_duration("eight and a half days thirty"
-                         " nine seconds"),
+                                          " nine seconds"),
                          (timedelta(days=8.5, seconds=39), ""))
         self.assertEqual(extract_duration("Set a timer for 30 minutes"),
                          (timedelta(minutes=30), "set a timer for"))
         self.assertEqual(extract_duration("Four and a half minutes until"
-                         " sunset"),
+                                          " sunset"),
                          (timedelta(minutes=4.5), "until sunset"))
         self.assertEqual(extract_duration("Nineteen minutes past the hour"),
                          (timedelta(minutes=19), "past the hour"))
@@ -170,11 +170,11 @@ class TestNormalize(unittest.TestCase):
                                           " hundred ninety seven days, and"
                                           " three hundred 91.6 seconds"),
                          (timedelta(weeks=3, days=497, seconds=391.6),
-                             "wake me up in , , and"))
+                          "wake me up in , , and"))
         self.assertEqual(extract_duration("The movie is one hour, fifty seven"
                                           " and a half minutes long"),
                          (timedelta(hours=1, minutes=57.5),
-                             "the movie is ,  long"))
+                          "the movie is ,  long"))
 
     def test_extractdatetime_en(self):
         def extractWithFormat(text):
@@ -459,6 +459,18 @@ class TestNormalize(unittest.TestCase):
                     "2017-07-08 10:00:00", "remind me to call mom")
         testExtract("remind me to call mom at 10am next saturday",
                     "2017-07-08 10:00:00", "remind me to call mom")
+        # test yesterday
+        testExtract("what day was yesterday",
+                    "2017-06-26 00:00:00", "what day was")
+        testExtract("what day was the day before yesterday",
+                    "2017-06-25 00:00:00", "what day was")
+        testExtract("i had dinner yesterday at 6",
+                    "2017-06-26 06:00:00", "i had dinner")
+        testExtract("i had dinner yesterday at 6 am",
+                    "2017-06-26 06:00:00", "i had dinner")
+        testExtract("i had dinner yesterday at 6 pm",
+                    "2017-06-26 18:00:00", "i had dinner")
+
         # Below two tests, ensure that time is picked
         # even if no am/pm is specified
         # in case of weekdays/tonight
@@ -480,6 +492,31 @@ class TestNormalize(unittest.TestCase):
                     "2017-06-27 23:30:00", "remind me about game")
         testExtract("set alarm at 7:30 on weekdays",
                     "2017-06-27 19:30:00", "set alarm on weekdays")
+
+        #  "# days <from X/after X>"
+        testExtract("my birthday is 2 days from today",
+                    "2017-06-29 00:00:00", "my birthday is")
+        testExtract("my birthday is 2 days after today",
+                    "2017-06-29 00:00:00", "my birthday is")
+        testExtract("my birthday is 2 days from tomorrow",
+                    "2017-06-30 00:00:00", "my birthday is")
+        testExtract("my birthday is 2 days after tomorrow",
+                    "2017-06-30 00:00:00", "my birthday is")
+        testExtract("remind me to call mom at 10am 2 days after next saturday",
+                    "2017-07-10 10:00:00", "remind me to call mom")
+        testExtract("my birthday is 2 days from yesterday",
+                    "2017-06-28 00:00:00", "my birthday is")
+        testExtract("my birthday is 2 days after yesterday",
+                    "2017-06-28 00:00:00", "my birthday is")
+        #  "# days ago>"
+        testExtract("my birthday was 1 day ago",
+                    "2017-06-26 00:00:00", "my birthday was")
+        testExtract("my birthday was 2 days ago",
+                    "2017-06-25 00:00:00", "my birthday was")
+        testExtract("my birthday was 3 days ago",
+                    "2017-06-24 00:00:00", "my birthday was")
+        testExtract("my birthday was 4 days ago",
+                    "2017-06-23 00:00:00", "my birthday was")
 
     def test_extract_ambiguous_time_en(self):
         morning = datetime(2017, 6, 27, 8, 1, 2)
