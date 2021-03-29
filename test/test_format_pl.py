@@ -17,12 +17,12 @@ import unittest
 import datetime
 import sys
 
-from lingua_franca.format import nice_number
-from lingua_franca.format import nice_time
-from lingua_franca.format import nice_duration
-from lingua_franca.format import pronounce_number
+from lingua_nostra.format import nice_number
+from lingua_nostra.format import nice_time
+from lingua_nostra.format import nice_duration
+from lingua_nostra.format import pronounce_number
 
-from lingua_franca import get_default_lang, set_default_lang, \
+from lingua_nostra import get_default_lang, set_default_lang, \
     load_language, unload_language
 
 

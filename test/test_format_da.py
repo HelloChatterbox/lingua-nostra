@@ -16,13 +16,13 @@
 import unittest
 import datetime
 
-from lingua_franca import load_language, unload_language, set_default_lang
-from lingua_franca.format import nice_number, nice_time, nice_response, \
+from lingua_nostra import load_language, unload_language, set_default_lang
+from lingua_nostra.format import nice_number, nice_time, nice_response, \
     pronounce_number
-# from lingua_franca.format import nice_time
-# from lingua_franca.format import pronounce_number
+# from lingua_nostra.format import nice_time
+# from lingua_nostra.format import pronounce_number
 # # from mycroft_parsers.lang.format_da import nice_response
-from lingua_franca.lang.format_da import pronounce_ordinal_da  # internal to da
+from lingua_nostra.lang.format_da import pronounce_ordinal_da  # internal to da
 
 
 def setUpModule():

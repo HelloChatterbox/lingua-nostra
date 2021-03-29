@@ -17,8 +17,8 @@
 import unittest
 from datetime import datetime, time, timedelta
 
-from lingua_franca import load_language, set_default_lang, unload_language
-from lingua_franca.parse import extract_datetime, extract_number, normalize, extract_duration
+from lingua_nostra import load_language, set_default_lang, unload_language
+from lingua_nostra.parse import extract_datetime, extract_number, normalize, extract_duration
 
 
 LANG = "nl-nl"

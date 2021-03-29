@@ -16,10 +16,10 @@
 import unittest
 from datetime import datetime, time
 
-from lingua_franca import load_language, unload_language
-from lingua_franca.parse import extract_datetime
-from lingua_franca.parse import extract_number
-from lingua_franca.parse import normalize
+from lingua_nostra import load_language, unload_language
+from lingua_nostra.parse import extract_datetime
+from lingua_nostra.parse import extract_number
+from lingua_nostra.parse import normalize
 
 
 def setUpModule():

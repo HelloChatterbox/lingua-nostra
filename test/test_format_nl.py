@@ -16,12 +16,12 @@
 import unittest
 import datetime
 
-from lingua_franca import load_language, unload_language
-from lingua_franca.format import nice_number
-from lingua_franca.format import nice_time
-from lingua_franca.format import pronounce_number
-from lingua_franca.lang.format_nl import nice_response_nl
-from lingua_franca.lang.format_nl import pronounce_ordinal_nl
+from lingua_nostra import load_language, unload_language
+from lingua_nostra.format import nice_number
+from lingua_nostra.format import nice_time
+from lingua_nostra.format import pronounce_number
+from lingua_nostra.lang.format_nl import nice_response_nl
+from lingua_nostra.lang.format_nl import pronounce_ordinal_nl
 
 
 def setUpModule():

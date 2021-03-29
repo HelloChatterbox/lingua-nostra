@@ -16,9 +16,9 @@
 import unittest
 import datetime
 
-from lingua_franca import load_language, unload_language, set_default_lang
-from lingua_franca.format import nice_number, nice_time, pronounce_number
-from lingua_franca.lang.format_sv import pronounce_ordinal_sv
+from lingua_nostra import load_language, unload_language, set_default_lang
+from lingua_nostra.format import nice_number, nice_time, pronounce_number
+from lingua_nostra.lang.format_sv import pronounce_ordinal_sv
 
 
 def setUpModule():

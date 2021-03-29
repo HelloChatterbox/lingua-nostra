@@ -21,20 +21,20 @@ import warnings
 import sys
 from pathlib import Path
 
-# TODO either write a getter for lingua_franca.internal._SUPPORTED_LANGUAGES,
+# TODO either write a getter for lingua_nostra.internal._SUPPORTED_LANGUAGES,
 # or make it public somehow
-from lingua_franca import load_languages, unload_languages, set_default_lang, \
+from lingua_nostra import load_languages, unload_languages, set_default_lang, \
     get_primary_lang_code, get_active_langs, get_supported_langs
-from lingua_franca.internal import UnsupportedLanguageError
-from lingua_franca.format import nice_number
-from lingua_franca.format import nice_time
-from lingua_franca.format import nice_date
-from lingua_franca.format import nice_date_time
-from lingua_franca.format import nice_year
-from lingua_franca.format import nice_duration
-from lingua_franca.format import pronounce_number
-from lingua_franca.format import date_time_format
-from lingua_franca.format import join_list
+from lingua_nostra.internal import UnsupportedLanguageError
+from lingua_nostra.format import nice_number
+from lingua_nostra.format import nice_time
+from lingua_nostra.format import nice_date
+from lingua_nostra.format import nice_date_time
+from lingua_nostra.format import nice_year
+from lingua_nostra.format import nice_duration
+from lingua_nostra.format import pronounce_number
+from lingua_nostra.format import date_time_format
+from lingua_nostra.format import join_list
 
 
 def setUpModule():

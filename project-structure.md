@@ -80,7 +80,7 @@ For example, formatters which have been or will be localized are registered in
 As of July, 2020, this tuple looks as follows:
 
   ```python3
-  # lingua_franca/format.py
+  # lingua_nostra/format.py
 
   _REGISTERED_FUNCTIONS = ("nice_number",
                          "nice_time",

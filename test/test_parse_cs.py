@@ -16,16 +16,16 @@
 import unittest
 from datetime import datetime, timedelta
 
-from lingua_franca import get_default_lang, set_default_lang, \
+from lingua_nostra import get_default_lang, set_default_lang, \
     load_language, unload_language
-from lingua_franca.parse import extract_datetime
-from lingua_franca.parse import extract_duration
-from lingua_franca.parse import extract_number, extract_numbers
-from lingua_franca.parse import fuzzy_match
-from lingua_franca.parse import get_gender
-from lingua_franca.parse import match_one
-from lingua_franca.parse import normalize
-from lingua_franca.time import default_timezone
+from lingua_nostra.parse import extract_datetime
+from lingua_nostra.parse import extract_duration
+from lingua_nostra.parse import extract_number, extract_numbers
+from lingua_nostra.parse import fuzzy_match
+from lingua_nostra.parse import get_gender
+from lingua_nostra.parse import match_one
+from lingua_nostra.parse import normalize
+from lingua_nostra.time import default_timezone
 
 
 def setUpModule():

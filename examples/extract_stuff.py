@@ -1,4 +1,4 @@
-from lingua_franca.parse import extract_datetime, extract_number, \
+from lingua_nostra.parse import extract_datetime, extract_number, \
     extract_numbers, extract_duration, normalize
 
 # extract a number

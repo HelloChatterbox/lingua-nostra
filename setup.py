@@ -20,21 +20,21 @@ def required(requirements_file):
                 if pkg.strip() and not pkg.startswith("#")]
 
 
-extra_files = package_files('lingua_franca')
+extra_files = package_files('lingua_nostra')
 
 with open("readme.md", "r") as fh:
     long_description = fh.read()
 
 setup(
     name='lingua_nostra',
-    version='0.4.1a2',
-    packages=['lingua_franca', 'lingua_franca.lang'],
+    version='0.4.2',
+    packages=['lingua_nostra', 'lingua_nostra.lang'],
     url='https://github.com/HelloChatterbox/lingua-nostra',
     license='Apache2.0',
     package_data={'': extra_files},
     include_package_data=True,
     install_requires=required('requirements.txt'),
-    description='fork of Mycroftai lingua_franca',
+    description='fork of Mycroftai lingua_franca 0.4.1',
     long_description=long_description,
     long_description_content_type="text/markdown",
     classifiers=[

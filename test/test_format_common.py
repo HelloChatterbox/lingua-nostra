@@ -16,7 +16,7 @@
 #
 
 import unittest
-from lingua_franca.lang.format_common import convert_to_mixed_fraction as cmf
+from lingua_nostra.lang.format_common import convert_to_mixed_fraction as cmf
 
 
 class TestMixedFraction(unittest.TestCase):

@@ -15,7 +15,7 @@
 
 import unittest
 
-from lingua_franca.lang.parse_common import tokenize, Token
+from lingua_nostra.lang.parse_common import tokenize, Token
 
 
 class TestParseCommon(unittest.TestCase):

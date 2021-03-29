@@ -1,4 +1,4 @@
-from lingua_franca.format import nice_duration, nice_date, nice_date_time, \
+from lingua_nostra.format import nice_duration, nice_date, nice_date_time, \
     nice_number, nice_time, pronounce_number
 
 # pronounce numbers
