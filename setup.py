@@ -26,17 +26,15 @@ with open("readme.md", "r") as fh:
     long_description = fh.read()
 
 setup(
-    name='lingua_franca',
-    version='0.4.1',
+    name='lingua_nostra',
+    version='0.4.1a2',
     packages=['lingua_franca', 'lingua_franca.lang'],
-    url='https://github.com/MycroftAI/lingua-franca',
+    url='https://github.com/HelloChatterbox/lingua-nostra',
     license='Apache2.0',
     package_data={'': extra_files},
     include_package_data=True,
     install_requires=required('requirements.txt'),
-    author='Mycroft AI',
-    author_email='dev@mycroft.ai',
-    description='Mycroft\'s multilingual text parsing and formatting library',
+    description='fork of Mycroftai lingua_franca',
     long_description=long_description,
     long_description_content_type="text/markdown",
     classifiers=[
