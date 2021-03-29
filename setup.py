@@ -29,7 +29,7 @@ setup(
     name='lingua_nostra',
     version='0.4.0a1',
     packages=['lingua_franca', 'lingua_franca.lang'],
-    url='https://github.com/HelloChatterbox/lingua-franca',
+    url='https://github.com/HelloChatterbox/lingua-nostra',
     license='Apache2.0',
     package_data={'': extra_files},
     include_package_data=True,
