@@ -27,14 +27,16 @@ with open("readme.md", "r") as fh:
 
 setup(
     name='lingua_nostra',
-    version='0.4.2',
+    version='0.4.3',
     packages=['lingua_nostra', 'lingua_nostra.lang'],
     url='https://github.com/HelloChatterbox/lingua-nostra',
     license='Apache2.0',
     package_data={'': extra_files},
     include_package_data=True,
     install_requires=required('requirements.txt'),
-    description='fork of Mycroftai lingua_franca 0.4.1',
+    description="Lingua_Nostra is chatterbox's natural language parser, "
+                "it converts natural language into data structures, and data "
+                "structures into natural language!",
     long_description=long_description,
     long_description_content_type="text/markdown",
     classifiers=[
