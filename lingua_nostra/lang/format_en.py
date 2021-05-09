@@ -66,38 +66,39 @@ def nice_number_en(number, speech=True, denominators=range(1, 21)):
 
 
 def pronounce_digits_en(number, places=2, all_digits=False):
-    decimal_part = ""
-    op_val = ""
-    result = []
-    is_float = isinstance(number, float)
-    if is_float:
-        op_val, decimal_part = [part for part in str(number).split(".")]
-        decimal_part = pronounce_number_en(
-            float("." + decimal_part), places=places).replace("zero ", "")
+    if isinstance(number, str):
+        op_val = number
+        decimal_part = ""
+        if "." in number:
+            op_val, decimal_part = number.split(".")
+        if all_digits:
+            op_val = " ".join([pronounce_number_en(int(ch))
+                               for ch in op_val])
+        else:
+
+            op_val = pronounce_number_en(int(op_val))
+        if decimal_part:
+            decimal_part = " ".join([pronounce_number_en(int(ch))
+                                     for ch in decimal_part[:places]])
+            return op_val + " point " + decimal_part
+        return op_val
+
+    if "." in str(number):
+        op_val, decimal_part = str(number).split(".")
+        decimal_part = " ".join([pronounce_number_en(int(ch))
+                                 for ch in decimal_part[:places]])
     else:
         op_val = str(number)
+        decimal_part = ""
 
     if all_digits:
-        result = [pronounce_number_en(int(i)) for i in op_val]
-        if is_float:
-            result.append(decimal_part)
-        result = " ".join(result)
+        op_val = " ".join([pronounce_number_en(int(ch))
+                           for ch in op_val])
     else:
-        while len(op_val) > 1:
-            idx = -2 if len(op_val) in [2, 4] else -3
-            back_digits = op_val[idx:]
-            op_val = op_val[:idx]
-            result = pronounce_number_en(
-                int(back_digits)).split(" ") + result
-        if op_val:
-            result.insert(0, pronounce_number_en(int(op_val)))
-        if is_float:
-            result.append(decimal_part)
-        no_no_words = list(_SHORT_SCALE_EN.values())[:5]
-        no_no_words.append('and')
-        result = [word for word in result if word.strip() not in no_no_words]
-        result = " ".join(result)
-    return result
+        op_val = pronounce_number_en(int(op_val))
+    if decimal_part:
+        return op_val + " point " + decimal_part
+    return op_val
 
 
 def pronounce_number_en(number, places=2, short_scale=True, scientific=False,
