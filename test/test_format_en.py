@@ -823,6 +823,11 @@ class TestQuantulum(unittest.TestCase):
         self.assertEqual(nice_units("100 W"), ['one hundred watts'])
         self.assertEqual(nice_units("The outside temperature is 35°F"),
                          ['thirty-five degrees fahrenheit'])
+        self.assertEqual(
+            nice_units("Gimme $1e10 now and also 1 TW and 0.5 J!"),
+            ['ten billion dollars, zero cents',
+             'one terawatt',
+             'zero point five joules'])
 
     def test_expand_units(self):
         self.assertEqual(expand_units("The outside temperature is 35°F"),
