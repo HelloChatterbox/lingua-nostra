@@ -21,9 +21,7 @@ from lingua_nostra.internal import FunctionNotLocalizedError
 from lingua_nostra.parse import extract_datetime
 from lingua_nostra.parse import extract_duration
 from lingua_nostra.parse import extract_number, extract_numbers
-from lingua_nostra.parse import fuzzy_match
-from lingua_nostra.parse import get_gender
-from lingua_nostra.parse import match_one
+from lingua_nostra.time import default_timezone
 from lingua_nostra.parse import normalize
 
 
@@ -36,32 +34,33 @@ def setUpModule():
 def tearDownModule():
     unload_language('fa')
 
+
 class TestNormalize(unittest.TestCase):
 
     def test_extract_number(self):
-        #self.assertEqual(extract_number("این تست اول است",
+        # self.assertEqual(extract_number("این تست اول است",
         #                                ordinals=True), 1)
         self.assertEqual(extract_number("این تست دو است"), 2)
-        #self.assertEqual(extract_number("این تست دوم است",
+        # self.assertEqual(extract_number("این تست دوم است",
         #                                ordinals=True), 2)
-        #self.assertEqual(extract_number("این تست سوم است",
+        # self.assertEqual(extract_number("این تست سوم است",
         #                                ordinals=True), 3.0)
-        #self.assertEqual(extract_number("چهارمی", ordinals=True), 4.0)
-        #self.assertEqual(extract_number("سی و ششمی", ordinals=True), 36.0)
+        # self.assertEqual(extract_number("چهارمی", ordinals=True), 4.0)
+        # self.assertEqual(extract_number("سی و ششمی", ordinals=True), 36.0)
         self.assertEqual(extract_number("این تست شماره چهار است"), 4)
-        #self.assertEqual(extract_number("یک سوم فنجان"), 1.0 / 3.0)
+        # self.assertEqual(extract_number("یک سوم فنجان"), 1.0 / 3.0)
         self.assertEqual(extract_number("سه فنجان"), 3)
-        #self.assertEqual(extract_number("۱/۳ فنجان"), 1.0 / 3.0)
-        #self.assertEqual(extract_number("یک چهارم فنجان"), 0.25)
-        #self.assertEqual(extract_number("۱/۴ فنجان"), 0.25)
-        #self.assertEqual(extract_number("دو سوم فنجان"), 2.0 / 3.0)
-        #self.assertEqual(extract_number("سه چهارم فنجان"), 3.0 / 4.0)
-        #self.assertEqual(extract_number("یک و سه چهارم فنجان"), 1.75)
-        #self.assertEqual(extract_number("۱ فنجان و نیم"), 1.5)
-        #self.assertEqual(extract_number("یک فنجان و نیم"), 1.5)
+        # self.assertEqual(extract_number("۱/۳ فنجان"), 1.0 / 3.0)
+        # self.assertEqual(extract_number("یک چهارم فنجان"), 0.25)
+        # self.assertEqual(extract_number("۱/۴ فنجان"), 0.25)
+        # self.assertEqual(extract_number("دو سوم فنجان"), 2.0 / 3.0)
+        # self.assertEqual(extract_number("سه چهارم فنجان"), 3.0 / 4.0)
+        # self.assertEqual(extract_number("یک و سه چهارم فنجان"), 1.75)
+        # self.assertEqual(extract_number("۱ فنجان و نیم"), 1.5)
+        # self.assertEqual(extract_number("یک فنجان و نیم"), 1.5)
         self.assertEqual(extract_number("یک و نیم فنجان"), 1.5)
         self.assertEqual(extract_number("بیست و دو"), 22)
-        #self.assertEqual(extract_number("بیست و دو و سه پنجم"), 22.6)
+        # self.assertEqual(extract_number("بیست و دو و سه پنجم"), 22.6)
         self.assertEqual(extract_number("دویست"), 200)
         self.assertEqual(extract_number("نه هزار"), 9000)
         self.assertEqual(extract_number("هزار و پانصد"), 1500)
@@ -69,7 +68,8 @@ class TestNormalize(unittest.TestCase):
         self.assertEqual(extract_number("دو میلیون"), 2000000)
         self.assertEqual(extract_number("دو هزار و هفده"), 2017)
         self.assertEqual(extract_number("شانزده هزار و صد و پونزده"), 16115)
-        self.assertEqual(extract_number("هجده میلیون و هجده هزار و دویست و هجده"), 18018218)
+        self.assertEqual(
+            extract_number("هجده میلیون و هجده هزار و دویست و هجده"), 18018218)
         self.assertEqual(extract_number("دو میلیون و پانصد هزار "
                                         "تن گوشت یخ زده"), 2500000)
 
@@ -96,13 +96,15 @@ class TestNormalize(unittest.TestCase):
         self.assertEqual(extract_duration("چهار و نیم دقیقه تا "
                                           "طلوع آفتاب"),
                          (timedelta(minutes=4.5), "تا طلوع آفتاب"))
-        self.assertEqual(extract_duration("این فیلم یک ساعت و پنجاه و هفت و نیم دقیقه "
-                                          "طول می کشد"),
-                         (timedelta(hours=1, minutes=57.5),
-                             "این فیلم طول می کشد"))
+        self.assertEqual(
+            extract_duration("این فیلم یک ساعت و پنجاه و هفت و نیم دقیقه "
+                             "طول می کشد"),
+            (timedelta(hours=1, minutes=57.5),
+             "این فیلم طول می کشد"))
+
     def test_extractdatetime_en(self):
         def extractWithFormat(text):
-            date = datetime(2017, 6, 27, 13, 4)  # Tue June 27, 2017 @ 1:04pm
+            date = datetime(2017, 6, 27, 13, 4, tzinfo=default_timezone())  # Tue June 27, 2017 @ 1:04pm
             [extractedDate, leftover] = extract_datetime(text, date)
             extractedDate = extractedDate.strftime("%Y-%m-%d %H:%M:%S")
             return [extractedDate, leftover]
@@ -138,7 +140,7 @@ class TestNormalize(unittest.TestCase):
                     "2017-06-29 00:00:00", "")
         testExtract("آب و هوا پس فردا چطوره؟",
                     "2017-06-29 00:00:00", "آب و هوا چطوره؟")
-        #testExtract("ساعت بیست و دو و چهل و پنج دقیقه بهم یادآوری کن",
+        # testExtract("ساعت بیست و دو و چهل و پنج دقیقه بهم یادآوری کن",
         #            "2017-06-27 22:45:00", "بهم یادآوری کن")
         testExtract("هوای جمعه صبح چطوره؟",
                     "2017-06-30 08:00:00", "هوای چطوره؟")
@@ -148,11 +150,11 @@ class TestNormalize(unittest.TestCase):
                     "2017-06-27 15:00:00", "هوای چطوره؟")
         testExtract("یادم بنداز که هشت هفته و دو روز دیگه به مادرم زنگ بزنم",
                     "2017-08-24 00:00:00", "یادم بنداز که به مادرم زنگ بزنم")
-        #testExtract("یادم بنداز که دوازده مرداد به مادرم زنگ بزنم",
+        # testExtract("یادم بنداز که دوازده مرداد به مادرم زنگ بزنم",
         #            "2017-08-03 00:00:00", "یادم بنداز که به مادرم زنگ بزنم")
-        #testExtract("یادم بنداز که ساعت هفت به مادرم زنگ بزنم",
+        # testExtract("یادم بنداز که ساعت هفت به مادرم زنگ بزنم",
         #            "2017-06-28 07:00:00", "یادم بنداز که به مادرم زنگ بزنم")
-        #testExtract("یادم بنداز که فردا ساعت بیست و دو به مادرم زنگ بزنم",
+        # testExtract("یادم بنداز که فردا ساعت بیست و دو به مادرم زنگ بزنم",
         #            "2017-06-28 22:00:00", "یادم بنداز که به مادرم زنگ بزنم")
         # TODO: This test is imperfect due to the "at 7:00" still in the
         #       remainder.  But let it pass for now since time is correct
@@ -160,10 +162,9 @@ class TestNormalize(unittest.TestCase):
     def test_multiple_numbers(self):
         self.assertEqual(extract_numbers("یک دو سه"),
                          [1.0, 2.0, 3.0])
-        self.assertEqual(extract_numbers("ده بیست سه پونزده هزار و شصت و شونزده"),
-                         [10, 20, 3, 15060, 16])
-        
-        
+        self.assertEqual(
+            extract_numbers("ده بیست سه پونزده هزار و شصت و شونزده"),
+            [10, 20, 3, 15060, 16])
 
 
 if __name__ == "__main__":
