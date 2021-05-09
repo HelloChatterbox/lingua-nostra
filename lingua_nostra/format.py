@@ -21,13 +21,15 @@ from collections import namedtuple
 from warnings import warn
 from os.path import join
 
+from quantulum3 import parser as quantity_parser
+
 from lingua_nostra.bracket_expansion import SentenceTreeParser
 from lingua_nostra.internal import localized_function, \
     populate_localized_function_dict, get_active_langs, \
     get_full_lang_code, get_default_lang, get_default_loc, \
     is_supported_full_lang, _raise_unsupported_language, \
     UnsupportedLanguageError, NoneLangWarning, InvalidLangWarning, \
-    FunctionNotLocalizedError
+    FunctionNotLocalizedError, get_primary_lang_code
 
 _REGISTERED_FUNCTIONS = ("nice_number",
                          "nice_time",
@@ -37,6 +39,58 @@ _REGISTERED_FUNCTIONS = ("nice_number",
                          "nice_duration")
 
 populate_localized_function_dict("format", langs=get_active_langs())
+
+
+@localized_function(run_own_code_on=[FunctionNotLocalizedError])
+def nice_units(utterance=None, lang=''):
+    """  Format a unit to a pronouncable string
+    Args:
+        unit (string): The unit abbreviation that is to be pronounced
+            (i.e. "C", "MW", "mW", "°F" etc)
+        utterance (string): A text in which the correct meaning of this
+            abbreviation becomes clear (i.e. "It's almost 30 C outside")
+            If given, the whole context will be parsed and the first unit
+            to be found returned
+        lang (string): the language to use, use Mycroft default language if
+            not provided
+    Returns:
+        (str): A fully de-abbreviated unit for insertion in a context like
+                situation (i.e. "degree Celsius", "percent")
+        (object): The parsed value of the quantity, if any (else None)
+    """
+    lang = get_primary_lang_code(lang)
+    pronounced_units = []
+
+    try:
+        quants = quantity_parser.parse(utterance, lang)
+        if not quants:
+            # Quantulum expects a unit to be prefixed with a quantifier
+            quants = quantity_parser.parse(f"1 {utterance}", lang)
+        for q in quants:
+            pronounced_units.append(str(q))
+    except NotImplementedError:
+        raise FunctionNotLocalizedError
+
+    return pronounced_units
+
+
+@localized_function(run_own_code_on=[FunctionNotLocalizedError])
+def expand_units(text, lang=""):
+    """
+        Format all units in a text and their amount into pronouncable strings
+        Args:
+            text (string): A text, ideally containing compact units
+                            (i.e. "It's almost 30 C outside")
+            lang (string): the language to use, use Mycroft default language if
+                not provided
+        Returns:
+            (str): A text with fully de-abbreviated units
+    """
+    lang = get_primary_lang_code(lang)
+    try:
+        return quantity_parser.inline_parse_and_expand(text, lang)
+    except NotImplementedError:
+        return text
 
 
 def _translate_word(name, lang=''):
