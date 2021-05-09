@@ -569,7 +569,7 @@ def nice_response(text, lang=''):
 
 
 @localized_function(run_own_code_on=[FunctionNotLocalizedError])
-def nice_bytes(number, lang='', speech=True, binary=True, gnu=False, places=1):
+def nice_bytes(number, lang='', speech=True, binary=True, gnu=False):
     """
     turns a number of bytes into a string using appropriate units
     prefixes - https://en.wikipedia.org/wiki/Binary_prefix
@@ -580,7 +580,6 @@ def nice_bytes(number, lang='', speech=True, binary=True, gnu=False, places=1):
     :param speech: spoken form (True) or short units (False)
     :param binary: 1 kilobyte = 1024 bytes (True) or 1 kilobyte = 1000 bytes (False)
     :param gnu: say only order of magnitude (bool)  - 100 Kilo (True) or 100 Kilobytes (False)
-    :param places: decimal places (int), TODO not yet implemented
     :return: nice bytes (str)
     """
     if speech and gnu:
@@ -602,9 +601,6 @@ def nice_bytes(number, lang='', speech=True, binary=True, gnu=False, places=1):
     else:
         default_units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
 
-        # if lang_code == "XX":
-        #    units = ['...']
-        # else:
     units = default_units
 
     if binary:
