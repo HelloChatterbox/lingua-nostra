@@ -13,13 +13,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
+import re
 from difflib import SequenceMatcher
 from warnings import warn
 from lingua_nostra.time import now_local
 from lingua_nostra.internal import populate_localized_function_dict, \
     get_active_langs, get_full_lang_code, get_primary_lang_code, \
-    get_default_lang, localized_function, _raise_unsupported_language
+    get_default_lang, localized_function, FunctionNotLocalizedError
 
 _REGISTERED_FUNCTIONS = ("extract_numbers",
                          "extract_number",
@@ -31,6 +31,19 @@ _REGISTERED_FUNCTIONS = ("extract_numbers",
                          "is_ordinal")
 
 populate_localized_function_dict("parse", langs=get_active_langs())
+
+
+@localized_function(run_own_code_on=[FunctionNotLocalizedError])
+def normalize_decimals(text, decimal, lang=""):
+    """
+        Replace 'decimal' with decimal periods so Python can floatify them
+    """
+    regex = r"\b\d+" + decimal + r"{1}\d+\b"
+    sanitize_decimals = re.compile(regex)
+    for _, match in enumerate(re.finditer(sanitize_decimals, text)):
+        text = text.replace(match.group(
+            0), match.group(0).replace(decimal, '.'))
+    return text
 
 
 def fuzzy_match(x: str, against: str) -> float:
@@ -74,7 +87,8 @@ def match_one(query, choices):
 
 
 @localized_function()
-def extract_numbers(text, short_scale=True, ordinals=False, lang=''):
+def extract_numbers(text, short_scale=True, ordinals=False, lang='',
+                    decimal='.'):
     """
         Takes in a string and extracts a list of numbers.
 
@@ -87,13 +101,18 @@ def extract_numbers(text, short_scale=True, ordinals=False, lang=''):
         ordinals (bool): consider ordinal numbers, e.g. third=3 instead of 1/3
         lang (str, optional): an optional BCP-47 language code, if omitted
                               the default language will be used.
+        decimal (str): character to use as decimal point. defaults to '.'
     Returns:
         list: list of extracted numbers as floats, or empty list if none found
+    Note:
+        will always extract numbers formatted with a decimal dot/full stop,
+        such as '3.5', even if 'decimal' is specified.
     """
 
 
 @localized_function()
-def extract_number(text, short_scale=True, ordinals=False, lang=''):
+def extract_number(text, short_scale=True, ordinals=False, lang='',
+                   decimal='.'):
     """Takes in a string and extracts a number.
 
     Args:
@@ -105,9 +124,13 @@ def extract_number(text, short_scale=True, ordinals=False, lang=''):
         ordinals (bool): consider ordinal numbers, e.g. third=3 instead of 1/3
         lang (str, optional): an optional BCP-47 language code, if omitted
                               the default language will be used.
+        decimal (str): character to use as decimal point. defaults to '.'
     Returns:
         (int, float or False): The number extracted or False if the input
                                text contains no numbers
+    Note:
+        will always extract numbers formatted with a decimal dot/full stop,
+        such as '3.5', even if 'decimal' is specified.
     """
 
 

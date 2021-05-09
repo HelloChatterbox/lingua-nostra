@@ -73,7 +73,7 @@ class TestNormalize(unittest.TestCase):
         self.assertEqual(extract_number("دو میلیون و پانصد هزار "
                                         "تن گوشت یخ زده"), 2500000)
 
-    def test_extract_duration_en(self):
+    def test_extract_duration_farsi(self):
         self.assertEqual(extract_duration("10 ثانیه"),
                          (timedelta(seconds=10.0), ""))
         self.assertEqual(extract_duration("5 دقیقه"),
@@ -102,7 +102,7 @@ class TestNormalize(unittest.TestCase):
             (timedelta(hours=1, minutes=57.5),
              "این فیلم طول می کشد"))
 
-    def test_extractdatetime_en(self):
+    def test_extractdatetime_farsi(self):
         def extractWithFormat(text):
             date = datetime(2017, 6, 27, 13, 4, tzinfo=default_timezone())  # Tue June 27, 2017 @ 1:04pm
             [extractedDate, leftover] = extract_datetime(text, date)
