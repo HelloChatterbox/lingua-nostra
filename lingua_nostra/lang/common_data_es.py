@@ -51,7 +51,6 @@ _NUM_STRING_ES = {
     80: 'ochenta',
     90: 'noventa'
 }
-
 _STRING_NUM_ES = {
     "cero": 0,
     "un": 1,
@@ -117,8 +116,6 @@ _STRING_NUM_ES = {
     "novecientos": 900,
     "novecientas": 900,
     "mil": 1000}
-
-
 _FRACTION_STRING_ES = {
     2: 'medio',
     3: 'tercio',
@@ -171,8 +168,6 @@ _LONG_SCALE_ES = OrderedDict([
     (1e336, "sexquinquagintillón"),
     (1e366, "unsexagintillón")
 ])
-
-
 _SHORT_SCALE_ES = OrderedDict([
     (100, 'centena'),
     (1000, 'millar'),
@@ -280,7 +275,6 @@ _ORDINAL_STRING_BASE_ES = {
     1e3: "milésimo"
 }
 
-
 _SHORT_ORDINAL_STRING_ES = {
     1e6: "millonésimo",
     1e9: "milmillonésimo",
@@ -296,7 +290,6 @@ _SHORT_ORDINAL_STRING_ES = {
 }
 _SHORT_ORDINAL_STRING_ES.update(_ORDINAL_STRING_BASE_ES)
 
-
 _LONG_ORDINAL_STRING_ES = {
     1e6: "millonésimo",
     1e12: "billionth",
@@ -311,3 +304,41 @@ _LONG_ORDINAL_STRING_ES = {
     # TODO > 1e60
 }
 _LONG_ORDINAL_STRING_ES.update(_ORDINAL_STRING_BASE_ES)
+
+# word rules for gender
+_FEMALE_ENDINGS_ES = ["a", "as", "triz"]
+_MALE_ENDINGS_ES = ["o", "os"]
+
+# special cases, word lookup for words not covered by above rule
+_GENDERS_ES = {
+    "mujer": "f",
+    "mujeres": "f",
+    "madre": "f",
+    "hombre": "m",
+    "padre": "m",
+    "mapa": "m",
+    "poema": "m",
+    "problema": "m",
+    "día": "m",
+    "moto": "f",
+    "radio": "f",
+    "mano": "f",
+    "foto": "f",
+    "amor": "m",
+    "corazón": "m",
+    "árbol": "m",
+    "canción": "f",
+    "ciudad": "f",
+    "flor": "f",
+    "jefe": "m",
+    "café": "m",
+    "baile": "m",
+    "gente": "f",
+    "serie": "f"
+}
+
+# context rules for gender
+_MALE_DETERMINANTS_ES = ["lo", "los", "este", "estos", "ese", "esos",
+                         "un", "unos", "aquel", "aquellos", "el"]
+_FEMALE_DETERMINANTS_ES = ["la", "las", "esta", "estas", "esa", "esas",
+                           "una", "unas", "aquella", "aquellas"]

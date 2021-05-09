@@ -21,6 +21,7 @@ from lingua_nostra.parse import (normalize, extract_numbers, extract_number,
                                  extract_datetime)
 from lingua_nostra.lang.parse_es import extract_datetime_es, is_fractional_es
 from lingua_nostra.time import default_timezone
+from lingua_nostra.parse import get_gender
 
 
 def setUpModule():
@@ -242,6 +243,30 @@ class TestDatetime_es(unittest.TestCase):
         self.assertEqual(extract_datetime(
             "hace tres noches", anchorDate=datetime(1998, 1, 1),
             lang='es')[0], datetime(1997, 12, 29, 21))
+
+
+
+class TestExtractGender(unittest.TestCase):
+    def test_gender_es(self):
+        # words with well defined grammatical gender rules
+        self.assertEqual(get_gender("vaca", lang="es"), "f")
+        self.assertEqual(get_gender("cabalo", lang="es"), "m")
+        self.assertEqual(get_gender("vacas", lang="es"), "f")
+
+        # words specifically defined in a lookup dictionary
+        self.assertEqual(get_gender("hombre", lang="es"), "m")
+        self.assertEqual(get_gender("mujer", lang="es"), "f")
+        self.assertEqual(get_gender("hombres", lang="es"), "m")
+        self.assertEqual(get_gender("mujeres", lang="es"), "f")
+
+        # words where gender rules do not work but context does
+        self.assertEqual(get_gender("buey", lang="es"), None)
+        self.assertEqual(get_gender("buey", "el buey come hierba", lang="es"), "m")
+        self.assertEqual(get_gender("hombre", "este hombre come bueyes",
+                                    lang="es"), "m")
+        self.assertEqual(get_gender("cantante", lang="es"), None)
+        self.assertEqual(get_gender("cantante", "esa cantante es muy buena",
+                                    lang="es"), "f")
 
 
 if __name__ == "__main__":
