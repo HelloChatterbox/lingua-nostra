@@ -19,7 +19,9 @@ from dateutil.relativedelta import relativedelta
 from lingua_nostra.time import now_local
 from lingua_nostra.lang.format_es import pronounce_number_es
 from lingua_nostra.lang.parse_common import *
-from lingua_nostra.lang.common_data_es import _ARTICLES_ES, _STRING_NUM_ES
+from lingua_nostra.lang.common_data_es import _ARTICLES_ES, _STRING_NUM_ES, \
+    _GENDERS_ES, _FEMALE_DETERMINANTS_ES, _MALE_DETERMINANTS_ES, \
+    _FEMALE_ENDINGS_ES, _MALE_ENDINGS_ES
 from lingua_nostra.parse import normalize_decimals
 
 
@@ -1106,23 +1108,34 @@ def get_gender_es(word, context=""):
         str: The code "m" (male), "f" (female) or "n" (neutral) for the gender,
              or None if unknown/or unused in the given language.
     """
-    # Next rules are imprecise and incompleted, but is a good starting point.
-    # For more detailed explanation, see
-    # http://www.wikilengua.org/index.php/Género_gramatical
-    word = word.rstrip("s")
-    gender = False
-    words = context.split(" ")
+    # parse gender taking context into account
+    word = word.lower()
+    words = context.lower().split(" ")
     for idx, w in enumerate(words):
         if w == word and idx != 0:
-            previous = words[idx - 1]
-            gender = get_gender_es(previous)
-            break
-    if not gender:
-        if word[-1] == "a":
-            gender = "f"
-        if word[-1] == "o" or word[-1] == "e":
-            gender = "m"
-    return gender
+            # in spanish usually the previous word (a determinant)
+            # assigns gender to the next word
+            previous = words[idx - 1].lower()
+            if previous in _MALE_DETERMINANTS_ES:
+                return "m"
+            elif previous in _FEMALE_DETERMINANTS_ES:
+                return "f"
+    # get gender using only the individual word
+    # see if this word has the gender defined
+    if word in _GENDERS_ES:
+        return _GENDERS_ES[word]
+    singular = word.rstrip("s")
+    if singular in _GENDERS_ES:
+        return _GENDERS_ES[singular]
+    # in spanish the last vowel usually defines the gender of a word
+    # the gender of the determinant takes precedence over this rule
+    for end_str in _FEMALE_ENDINGS_ES:
+        if word.endswith(end_str):
+            return "f"
+    for end_str in _MALE_ENDINGS_ES:
+        if word.endswith(end_str):
+            return "m"
+    return None
 
 
 class SpanishNormalizer(Normalizer):
