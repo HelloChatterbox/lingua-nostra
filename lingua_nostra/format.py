@@ -21,7 +21,6 @@ from collections import namedtuple
 from warnings import warn
 from os.path import join
 
-
 from lingua_nostra.bracket_expansion import SentenceTreeParser
 from lingua_nostra.internal import localized_function, \
     populate_localized_function_dict, get_active_langs, \
@@ -30,10 +29,10 @@ from lingua_nostra.internal import localized_function, \
     UnsupportedLanguageError, NoneLangWarning, InvalidLangWarning, \
     FunctionNotLocalizedError
 
-
 _REGISTERED_FUNCTIONS = ("nice_number",
                          "nice_time",
                          "pronounce_number",
+                         "pronounce_digits",
                          "nice_response",
                          "nice_duration")
 
@@ -119,12 +118,12 @@ class DateTimeFormat:
             str(int(number % 100 / 10))) or str(int(number % 100 / 10))
         x0 = (self.lang_config[lang]['number'].get(
             str(int(number % 100 / 10) * 10)) or
-            str(int(number % 100 / 10) * 10))
+              str(int(number % 100 / 10) * 10))
         xxx = (self.lang_config[lang]['number'].get(str(number % 1000)) or
                str(number % 1000))
         x00 = (self.lang_config[lang]['number'].get(str(int(
             number % 1000 / 100) * 100)) or
-            str(int(number % 1000 / 100) * 100))
+               str(int(number % 1000 / 100) * 100))
         x_in_x00 = self.lang_config[lang]['number'].get(str(int(
             number % 1000 / 100))) or str(int(number % 1000 / 100))
         xx00 = self.lang_config[lang]['number'].get(str(int(
@@ -134,11 +133,12 @@ class DateTimeFormat:
             number % 10000 / 100))) or str(int(number % 10000 / 100))
         x000 = (self.lang_config[lang]['number'].get(str(int(
             number % 10000 / 1000) * 1000)) or
-            str(int(number % 10000 / 1000) * 1000))
+                str(int(number % 10000 / 1000) * 1000))
         x_in_x000 = self.lang_config[lang]['number'].get(str(int(
             number % 10000 / 1000))) or str(int(number % 10000 / 1000))
         x0_in_x000 = self.lang_config[lang]['number'].get(str(int(
-            number % 10000 / 1000) * 10)) or str(int(number % 10000 / 1000) * 10)
+            number % 10000 / 1000) * 10)) or str(
+            int(number % 10000 / 1000) * 10)
         x_in_0x00 = self.lang_config[lang]['number'].get(str(int(
             number % 1000 / 100)) or str(int(number % 1000 / 100)))
 
@@ -302,6 +302,23 @@ def pronounce_number(number, lang='', places=2, short_scale=True,
         ordinals (bool): pronounce in ordinal form "first" instead of "one"
     Returns:
         (str): The pronounced number
+    """
+
+
+@localized_function()
+def pronounce_digits(number, lang=None, places=2, all_digits=False):
+    """
+    Pronounce a number's digits, either colloquially or in full
+    In English, the colloquial way is usually to read two digits at a time,
+    treating each pair as a single number.
+    Examples:
+        >>> pronounce_number(127, all_digits=False)
+        'one twenty seven'
+        >>> pronounce_number(127, all_digits=True)
+        'one two seven'
+    Args:
+        number (int|float)
+        all_digits (bool): read every digit, rather than two digits at a time
     """
 
 

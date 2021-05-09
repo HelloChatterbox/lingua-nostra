@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
+from math import modf
 from lingua_nostra.lang.format_common import convert_to_mixed_fraction
 from lingua_nostra.lang.common_data_en import _NUM_STRING_EN, \
     _FRACTION_STRING_EN, _LONG_SCALE_EN, _SHORT_SCALE_EN, _SHORT_ORDINAL_EN, _LONG_ORDINAL_EN
@@ -63,6 +63,41 @@ def nice_number_en(number, speech=True, denominators=range(1, 21)):
     if num > 1:
         return_string += 's'
     return return_string
+
+
+def pronounce_digits_en(number, places=2, all_digits=False):
+    decimal_part = ""
+    op_val = ""
+    result = []
+    is_float = isinstance(number, float)
+    if is_float:
+        op_val, decimal_part = [part for part in str(number).split(".")]
+        decimal_part = pronounce_number_en(
+            float("." + decimal_part), places=places).replace("zero ", "")
+    else:
+        op_val = str(number)
+
+    if all_digits:
+        result = [pronounce_number_en(int(i)) for i in op_val]
+        if is_float:
+            result.append(decimal_part)
+        result = " ".join(result)
+    else:
+        while len(op_val) > 1:
+            idx = -2 if len(op_val) in [2, 4] else -3
+            back_digits = op_val[idx:]
+            op_val = op_val[:idx]
+            result = pronounce_number_en(
+                int(back_digits)).split(" ") + result
+        if op_val:
+            result.insert(0, pronounce_number_en(int(op_val)))
+        if is_float:
+            result.append(decimal_part)
+        no_no_words = list(_SHORT_SCALE_EN.values())[:5]
+        no_no_words.append('and')
+        result = [word for word in result if word.strip() not in no_no_words]
+        result = " ".join(result)
+    return result
 
 
 def pronounce_number_en(number, places=2, short_scale=True, scientific=False,
