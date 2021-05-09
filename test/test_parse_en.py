@@ -1098,6 +1098,9 @@ class TestQuantulum(unittest.TestCase):
         self.assertEqual(extract_quantities(
             "The LHC smashes proton beams at 12.8–13.0 TeV"),
             [(12.9, '12.8–13.0 TeV')])
+        self.assertEqual(
+            extract_quantities("Gimme $1e10 now and also 1 TW and 0.5 J!"),
+            [(10000000000.0, '$1e10'), (1.0, '1 TW'), (0.5, '0.5 J')])
 
         self.assertEqual(extract_quantities(
             "The LHC smashes proton beams at 12.8–13.0 TeV", raw=True),
