@@ -16,15 +16,15 @@
 import unittest
 from datetime import datetime, timedelta
 
-from lingua_franca import load_language, unload_language, set_default_lang
-from lingua_franca.internal import FunctionNotLocalizedError
-from lingua_franca.parse import extract_datetime
-from lingua_franca.parse import extract_duration
-from lingua_franca.parse import extract_number, extract_numbers
-from lingua_franca.parse import fuzzy_match
-from lingua_franca.parse import get_gender
-from lingua_franca.parse import match_one
-from lingua_franca.parse import normalize
+from lingua_nostra import load_language, unload_language, set_default_lang
+from lingua_nostra.internal import FunctionNotLocalizedError
+from lingua_nostra.parse import extract_datetime
+from lingua_nostra.parse import extract_duration
+from lingua_nostra.parse import extract_number, extract_numbers
+from lingua_nostra.parse import fuzzy_match
+from lingua_nostra.parse import get_gender
+from lingua_nostra.parse import match_one
+from lingua_nostra.parse import normalize
 
 
 def setUpModule():
