@@ -21,6 +21,8 @@ from lingua_nostra.parse import extract_datetime
 from lingua_nostra.parse import extract_duration
 from lingua_nostra.parse import extract_number
 from lingua_nostra.parse import normalize
+from lingua_nostra.time import default_timezone
+from lingua_nostra.time import now_local
 
 
 def setUpModule():
@@ -83,9 +85,18 @@ class TestNormalize(unittest.TestCase):
         self.assertEqual(extract_number("Drei Viertel Tassen", lang="de-de"),
                          3.0 / 4.0)
 
+    def test_extractdatetime_no_anchor_de(self):
+        def testExtractWithoutAnchor(text, expected_date):
+            extractedDate, _ = extract_datetime(text, lang="de-de")
+            self.assertEqual(extractedDate, expected_date)
+
+        dt = now_local() + timedelta(weeks=2)
+        dt = dt.replace(hour=0, minute=0, second=0, microsecond=0)
+        testExtractWithoutAnchor("2 wochen", dt)
+
     def test_extractdatetime_de(self):
         def extractWithFormat(text):
-            date = datetime(2017, 6, 27, 0, 0)
+            date = datetime(2017, 6, 27, 0, 0, tzinfo=default_timezone())
             [extractedDate, leftover] = extract_datetime(text, date,
                                                          lang="de-de", )
             extractedDate = extractedDate.strftime("%Y-%m-%d %H:%M:%S")
@@ -193,26 +204,27 @@ class TestNormalize(unittest.TestCase):
         self.assertEqual(extract_duration("25 wochen", lang="de-de"),
                          (timedelta(weeks=25), ""))
         # TODO no german text to number parsing yet
-        #self.assertEqual(extract_duration("sieben stunden"),
+        # self.assertEqual(extract_duration("sieben stunden"),
         #                 (timedelta(hours=7), ""))
         self.assertEqual(extract_duration("7.5 sekunden", lang="de-de"),
                          (timedelta(seconds=7.5), ""))
-        #self.assertEqual(extract_duration("eight and a half days thirty"
+        # self.assertEqual(extract_duration("eight and a half days thirty"
         #                                  " nine seconds"),
         #                 (timedelta(days=8.5, seconds=39), ""))
-        self.assertEqual(extract_duration("starte timer für 30 minuten", lang="de-de"),
-                         (timedelta(minutes=30), "starte timer für"))
-        #self.assertEqual(extract_duration("Four and a half minutes until"
+        self.assertEqual(
+            extract_duration("starte timer für 30 minuten", lang="de-de"),
+            (timedelta(minutes=30), "starte timer für"))
+        # self.assertEqual(extract_duration("Four and a half minutes until"
         #                                  " sunset"),
         #                 (timedelta(minutes=4.5), "until sunset"))
-        #self.assertEqual(extract_duration("Nineteen minutes past the hour"),
+        # self.assertEqual(extract_duration("Nineteen minutes past the hour"),
         #                 (timedelta(minutes=19), "past the hour"))
         self.assertEqual(extract_duration("weck mich in 3 wochen, "
                                           " 497 tage und"
                                           " 391.6 sekunden", lang="de-de"),
                          (timedelta(weeks=3, days=497, seconds=391.6),
                           "weck mich in ,   und"))
-        #self.assertEqual(extract_duration("The movie is one hour, fifty seven"
+        # self.assertEqual(extract_duration("The movie is one hour, fifty seven"
         #                                  " and a half minutes long"),
         #                 (timedelta(hours=1, minutes=57.5),
         #                     "the movie is ,  long"))
