@@ -26,6 +26,7 @@ from lingua_nostra.parse import fuzzy_match
 from lingua_nostra.parse import get_gender
 from lingua_nostra.parse import match_one
 from lingua_nostra.parse import normalize
+from lingua_nostra.parse import extract_quantities
 
 
 def setUpModule():
@@ -171,7 +172,7 @@ class TestNormalize(unittest.TestCase):
         self.assertEqual(extract_number("2 fifth",
                                         ordinals=True), 5)
         self.assertEqual(extract_number("2 fifths",
-                                        ordinals=False), 2/5)
+                                        ordinals=False), 2 / 5)
         self.assertEqual(extract_number("2 fifths",
                                         ordinals=None), 2)
 
@@ -223,7 +224,6 @@ class TestNormalize(unittest.TestCase):
                                         ordinals=None), 8)
 
     def test_extract_number(self):
-
         self.assertEqual(extract_number("this is 2 test"), 2)
         self.assertEqual(extract_number("this is test number 4"), 4)
         self.assertEqual(extract_number("three cups"), 3)
@@ -341,7 +341,7 @@ class TestNormalize(unittest.TestCase):
         self.assertEqual(extract_duration("The movie is one hour, fifty seven"
                                           " and a half minutes long"),
                          (timedelta(hours=1, minutes=57.5),
-                             "The movie is ,  long"))
+                          "The movie is ,  long"))
         self.assertEqual(extract_duration("Four and a Half minutes until"
                                           " sunset"),
                          (timedelta(minutes=4.5), "until sunset"))
@@ -350,7 +350,8 @@ class TestNormalize(unittest.TestCase):
 
     def test_extractdatetime_fractions_en(self):
         def extractWithFormat(text):
-            date = datetime(2017, 6, 27, 13, 4, tzinfo=default_timezone())  # Tue June 27, 2017 @ 1:04pm
+            date = datetime(2017, 6, 27, 13, 4,
+                            tzinfo=default_timezone())  # Tue June 27, 2017 @ 1:04pm
             [extractedDate, leftover] = extract_datetime(text, date)
             extractedDate = extractedDate.strftime("%Y-%m-%d %H:%M:%S")
             return [extractedDate, leftover]
@@ -373,7 +374,8 @@ class TestNormalize(unittest.TestCase):
 
     def test_extractdatetime_en(self):
         def extractWithFormat(text):
-            date = datetime(2017, 6, 27, 13, 4, tzinfo=default_timezone())  # Tue June 27, 2017 @ 1:04pm
+            date = datetime(2017, 6, 27, 13, 4,
+                            tzinfo=default_timezone())  # Tue June 27, 2017 @ 1:04pm
             [extractedDate, leftover] = extract_datetime(text, date)
             extractedDate = extractedDate.strftime("%Y-%m-%d %H:%M:%S")
             return [extractedDate, leftover]
@@ -795,10 +797,12 @@ class TestNormalize(unittest.TestCase):
                          "remind me to do something at 2 to 2")
         self.assertEqual(normalize('what time will it be in two minutes'),
                          'what time will it be in 2 minutes')
-        self.assertEqual(normalize('What time will it be in twenty two minutes'),
-                         'What time will it be in 22 minutes')
-        self.assertEqual(normalize("remind me to do something at twenty to two"),
-                         "remind me to do something at 20 to 2")
+        self.assertEqual(
+            normalize('What time will it be in twenty two minutes'),
+            'What time will it be in 22 minutes')
+        self.assertEqual(
+            normalize("remind me to do something at twenty to two"),
+            "remind me to do something at 20 to 2")
 
         # TODO imperfect test, maybe should return 'my favorite numbers are 20 2',
         #  let is pass for now since this is likely a STT issue if ever
@@ -840,7 +844,8 @@ class TestNormalize(unittest.TestCase):
             extract_datetime('What time will it be in two minutes', now)[0],
             datetime(2019, 7, 4, 8, 3, 2, tzinfo=default_timezone()))
         self.assertEqual(
-            extract_datetime('What time will it be in two hundred minutes', now)[0],
+            extract_datetime('What time will it be in two hundred minutes',
+                             now)[0],
             datetime(2019, 7, 4, 11, 21, 2, tzinfo=default_timezone()))
 
     def test_spaces(self):
@@ -1077,6 +1082,34 @@ class TestNormalize(unittest.TestCase):
     def test_gender(self):
         self.assertRaises((AttributeError, FunctionNotLocalizedError),
                           get_gender, "person", None)
+
+
+class TestQuantulum(unittest.TestCase):
+    def test_extract_units(self):
+        self.assertEqual(extract_quantities("100 W"), [(100.0, '100 W')])
+        self.assertEqual(extract_quantities("I want 2 liters of wine"),
+                         [(2.0, '2 liters')])
+        self.assertEqual(extract_quantities("I want 10 beers"),
+                         [(10.0, '10')])
+        self.assertEqual(extract_quantities("The outside temperature is 35°F"),
+                         [(35.0, '35°F')])
+        self.assertEqual(extract_quantities('Sound travels at 0.34 km/s'),
+                         [(0.34, '0.34 km/s')])
+        self.assertEqual(extract_quantities(
+            "The LHC smashes proton beams at 12.8–13.0 TeV"),
+            [(12.9, '12.8–13.0 TeV')])
+        self.assertEqual(
+            extract_quantities("Gimme $1e10 now and also 1 TW and 0.5 J!"),
+            [(10000000000.0, '$1e10'), (1.0, '1 TW'), (0.5, '0.5 J')])
+
+        self.assertEqual(extract_quantities(
+            "The LHC smashes proton beams at 12.8–13.0 TeV", raw=True),
+            [{'span': (32, 45),
+              'text': '12.8–13.0 TeV',
+              'uncertainty': 0.09999999999999964,
+              'unit': 'teraelectron volt',
+              'value': 12.9}]
+        )
 
 
 if __name__ == "__main__":

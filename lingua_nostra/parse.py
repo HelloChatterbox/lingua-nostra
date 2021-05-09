@@ -20,6 +20,8 @@ from lingua_nostra.time import now_local
 from lingua_nostra.internal import populate_localized_function_dict, \
     get_active_langs, get_full_lang_code, get_primary_lang_code, \
     get_default_lang, localized_function, FunctionNotLocalizedError
+from quantulum3 import parser as quantity_parser
+
 
 _REGISTERED_FUNCTIONS = ("extract_numbers",
                          "extract_number",
@@ -44,6 +46,31 @@ def normalize_decimals(text, decimal, lang=""):
         text = text.replace(match.group(
             0), match.group(0).replace(decimal, '.'))
     return text
+
+
+@localized_function(run_own_code_on=[FunctionNotLocalizedError])
+def extract_quantities(utterance, raw=False, lang=''):
+    lang_code = get_primary_lang_code(lang)
+    bucket = []
+    try:
+        quants = quantity_parser.parse(utterance, lang=lang_code)
+    except NotImplementedError:
+        raise FunctionNotLocalizedError
+    remainder = utterance
+    for q in quants:
+        unit = {
+            "value": q.value,
+            "text": q.surface,
+            "span": q.span,
+            "unit": str(q.unit),
+            "uncertainty": q.uncertainty
+        }
+        remainder = remainder[:q.span[0]] + remainder[q.span[1]:]
+        bucket += [unit]
+    if raw:
+        return bucket
+    else:
+        return [(b["value"], b["text"]) for b in bucket]
 
 
 def fuzzy_match(x: str, against: str) -> float:

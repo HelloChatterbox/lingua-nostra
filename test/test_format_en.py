@@ -37,6 +37,7 @@ from lingua_nostra.format import date_time_format
 from lingua_nostra.format import join_list
 from lingua_nostra.format import nice_bytes
 from lingua_nostra.format import pronounce_digits
+from lingua_nostra.format import nice_units, expand_units
 
 
 def setUpModule():
@@ -814,6 +815,29 @@ class TestNiceBytes(unittest.TestCase):
         self.assertEqual(
             nice_bytes(2000000000, speech=False, gnu=True, binary=False),
             "2.0 G")
+
+
+class TestQuantulum(unittest.TestCase):
+    def test_nice_units(self):
+        self.assertEqual(nice_units("W"), ["one watt"])
+        self.assertEqual(nice_units("100 W"), ['one hundred watts'])
+        self.assertEqual(nice_units("The outside temperature is 35°F"),
+                         ['thirty-five degrees fahrenheit'])
+        self.assertEqual(
+            nice_units("Gimme $1e10 now and also 1 TW and 0.5 J!"),
+            ['ten billion dollars, zero cents',
+             'one terawatt',
+             'zero point five joules'])
+
+    def test_expand_units(self):
+        self.assertEqual(expand_units("The outside temperature is 35°F"),
+                         "The outside temperature is thirty-five degrees fahrenheit")
+        self.assertEqual(
+            expand_units("This solar panel merely produces one W"),
+            "This solar panel merely produces one watt")
+        self.assertEqual(
+            expand_units("Gimme $1e10 now and also 1 TW and 0.5 J!"),
+            "Gimme ten billion dollars, zero cents now and also one terawatt and zero point five joules!")
 
 
 if __name__ == "__main__":
