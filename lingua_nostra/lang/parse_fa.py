@@ -21,6 +21,7 @@ from lingua_nostra.lang.common_data_fa import _FARSI_BIG, \
 
 import json
 from lingua_nostra.internal import resolve_resource_file
+from lingua_nostra.parse import normalize_decimals
 
 
 def _is_number(s):
@@ -29,6 +30,7 @@ def _is_number(s):
         return True
     except ValueError:
         return False
+
 
 def _parse_sentence(text):
     for key, value in _FORMAL_VARIANT.items():
@@ -40,6 +42,7 @@ def _parse_sentence(text):
     s = 0
     step = 10
     mode = 'init'
+
     def finish_num():
         nonlocal current_number
         nonlocal s
@@ -53,13 +56,14 @@ def _parse_sentence(text):
         current_number = 0
         current_words = []
         mode = 'init'
+
     for x in ar:
         if x == "و":
             if mode == 'num_ten' or mode == 'num_hundred' or mode == 'num_one':
                 mode += '_va'
                 current_words.append(x)
             elif mode == 'num':
-                current_words.append(x)    
+                current_words.append(x)
             else:
                 finish_num()
                 result.append(x)
@@ -70,7 +74,7 @@ def _parse_sentence(text):
         elif x in _FARSI_ONES:
             t = _FARSI_ONES.index(x)
             if mode != 'init' and mode != 'num_hundred_va' and mode != 'num':
-                if not(t < 10 and mode == 'num_ten_va'):
+                if not (t < 10 and mode == 'num_ten_va'):
                     finish_num()
             current_words.append(x)
             s += t
@@ -79,20 +83,20 @@ def _parse_sentence(text):
             if mode != 'init' and mode != 'num_hundred_va' and mode != 'num':
                 finish_num()
             current_words.append(x)
-            s += _FARSI_TENS.index(x)*10
+            s += _FARSI_TENS.index(x) * 10
             mode = 'num_ten'
         elif x in _FARSI_HUNDREDS:
             if mode != 'init' and mode != 'num':
                 finish_num()
             current_words.append(x)
-            s += _FARSI_HUNDREDS.index(x)*100
+            s += _FARSI_HUNDREDS.index(x) * 100
             mode = 'num_hundred'
         elif x in _FARSI_BIG:
             current_words.append(x)
             d = _FARSI_BIG.index(x)
             if mode == 'init' and d == 1:
                 s = 1
-            s *= 10**(3*d)
+            s *= 10 ** (3 * d)
             current_number += s
             s = 0
             mode = 'num'
@@ -118,6 +122,7 @@ _date_units = {
     'روز': timedelta(days=1),
     'هفته': timedelta(weeks=1),
 }
+
 
 def extract_duration_fa(text):
     """
@@ -207,9 +212,8 @@ def extract_datetime_fa(text, anchorDate=None, default_time=None):
         .replace('سه شنبه', 'سهشنبه') \
         .replace('چهار شنبه', 'چهارشنبه') \
         .replace('پنج شنبه', 'پنجشنبه') \
-        .replace('بعد از ظهر', 'بعدازظهر') \
-        
-        
+        .replace('بعد از ظهر', 'بعدازظهر')
+
     if not anchorDate:
         anchorDate = datetime.now()
     today = anchorDate.replace(hour=0, minute=0, second=0, microsecond=0)
@@ -224,11 +228,11 @@ def extract_datetime_fa(text, anchorDate=None, default_time=None):
         'یکشنبه',
     ]
     daysDict = {
-        'پریروز': today + timedelta(days= -2),
-        'دیروز': today + timedelta(days= -1),
+        'پریروز': today + timedelta(days=-2),
+        'دیروز': today + timedelta(days=-1),
         'امروز': today,
-        'فردا': today + timedelta(days= 1),
-        'پسفردا': today + timedelta(days= 2),
+        'فردا': today + timedelta(days=1),
+        'پسفردا': today + timedelta(days=2),
     }
     timesDict = {
         'صبح': timedelta(hours=8),
@@ -306,49 +310,26 @@ def extract_datetime_fa(text, anchorDate=None, default_time=None):
         remainder.append(x)
     return (result, " ".join(remainder))
 
-def is_fractional_fa(input_str, short_scale=True):
-    """
-    This function takes the given text and checks if it is a fraction.
 
-    Args:
-        input_str (str): the string to check if fractional
-        short_scale (bool): use short scale if True, long scale if False
-    Returns:
-        (bool) or (float): False if not a fraction, otherwise the fraction
-
-    """
-    if input_str.endswith('s', -1):
-        input_str = input_str[:len(input_str) - 1]  # e.g. "fifths"
-
-    fracts = {"whole": 1, "half": 2, "halve": 2, "quarter": 4}
-    if short_scale:
-        for num in _SHORT_ORDINAL_FA:
-            if num > 2:
-                fracts[_SHORT_ORDINAL_FA[num]] = num
-    else:
-        for num in _LONG_ORDINAL_FA:
-            if num > 2:
-                fracts[_LONG_ORDINAL_FA[num]] = num
-
-    if input_str.lower() in fracts:
-        return 1.0 / fracts[input_str.lower()]
-    return False
-
-
-def extract_numbers_fa(text, short_scale=True, ordinals=False):
+def extract_numbers_fa(text, short_scale=True, ordinals=False, decimal='.'):
     """
         Takes in a string and extracts a list of numbers.
 
-    Args:
-        text (str): the string to extract a number from
-        short_scale (bool): Use "short scale" or "long scale" for large
-            numbers -- over a million.  The default is short scale, which
-            is now common in most English speaking countries.
-            See https://en.wikipedia.org/wiki/Names_of_large_numbers
-        ordinals (bool): consider ordinal numbers, e.g. third=3 instead of 1/3
+     Args:
+        text (str): the string to normalize
+        short_scale (bool): use short scale if True, long scale if False
+        ordinals (bool): consider ordinal numbers, third=3 instead of 1/3
+        decimal (str): character to use as decimal point. defaults to '.'
     Returns:
-        list: list of extracted numbers as floats
+        (int) or (float) or False: The extracted number or False if no number
+                                   was found
+    Note:
+        will always extract numbers formatted with a decimal dot/full stop,
+        such as '3.5', even if 'decimal' is specified.
+
     """
+    if decimal != '.':
+        text = normalize_decimals(text, decimal)
 
     ar = _parse_sentence(text)
     result = []
@@ -358,7 +339,7 @@ def extract_numbers_fa(text, short_scale=True, ordinals=False):
     return result
 
 
-def extract_number_fa(text, ordinals=False):
+def extract_number_fa(text, short_scale=True, ordinals=False, decimal='.'):
     """
     This function extracts a number from a text string,
     handles pronunciations in long scale and short scale
@@ -369,21 +350,29 @@ def extract_number_fa(text, ordinals=False):
         text (str): the string to normalize
         short_scale (bool): use short scale if True, long scale if False
         ordinals (bool): consider ordinal numbers, third=3 instead of 1/3
+        decimal (str): character to use as decimal point. defaults to '.'
     Returns:
         (int) or (float) or False: The extracted number or False if no number
                                    was found
+    Note:
+        will always extract numbers formatted with a decimal dot/full stop,
+        such as '3.5', even if 'decimal' is specified.
 
     """
+    if decimal != '.':
+        text = normalize_decimals(text, decimal)
     x = extract_numbers_fa(text, ordinals=ordinals)
     if (len(x) == 0):
         return False
     return x[0]
 
-class EnglishNormalizer(Normalizer):
+
+class FarsiNormalizer(Normalizer):
+    # TODO
     with open(resolve_resource_file("text/en-us/normalize.json")) as f:
         _default_config = json.load(f)
 
 
 def normalize_fa(text, remove_articles=True):
     """ English string normalization """
-    return EnglishNormalizer().normalize(text, remove_articles)
+    return FarsiNormalizer().normalize(text, remove_articles)

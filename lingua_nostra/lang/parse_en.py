@@ -30,6 +30,7 @@ from lingua_nostra.lang.common_data_en import _ARTICLES_EN, _NUM_STRING_EN, \
 import re
 import json
 from lingua_nostra.internal import resolve_resource_file
+from lingua_nostra.parse import normalize_decimals
 
 
 def _convert_words_to_numbers_en(text, short_scale=True, ordinals=False):
@@ -530,7 +531,7 @@ def _initialize_number_data_en(short_scale, speech=True):
     return multiplies, string_num_ordinal_en, string_num_scale_en
 
 
-def extract_number_en(text, short_scale=True, ordinals=False):
+def extract_number_en(text, short_scale=True, ordinals=False, decimal='.'):
     """
     This function extracts a number from a text string,
     handles pronunciations in long scale and short scale
@@ -541,11 +542,17 @@ def extract_number_en(text, short_scale=True, ordinals=False):
         text (str): the string to normalize
         short_scale (bool): use short scale if True, long scale if False
         ordinals (bool): consider ordinal numbers, third=3 instead of 1/3
+        decimal (str): character to use as decimal point. defaults to '.'
     Returns:
         (int) or (float) or False: The extracted number or False if no number
                                    was found
+    Note:
+        will always extract numbers formatted with a decimal dot/full stop,
+        such as '3.5', even if 'decimal' is specified.
 
     """
+    if decimal != '.':
+        text = normalize_decimals(text, decimal)
     return _extract_number_with_text_en(tokenize(text.lower()),
                                         short_scale, ordinals).value
 
@@ -1453,7 +1460,7 @@ def is_fractional_en(input_str, short_scale=True, spoken=True):
     return False
 
 
-def extract_numbers_en(text, short_scale=True, ordinals=False):
+def extract_numbers_en(text, short_scale=True, ordinals=False, decimal='.'):
     """
         Takes in a string and extracts a list of numbers.
 
@@ -1464,9 +1471,15 @@ def extract_numbers_en(text, short_scale=True, ordinals=False):
             is now common in most English speaking countries.
             See https://en.wikipedia.org/wiki/Names_of_large_numbers
         ordinals (bool): consider ordinal numbers, e.g. third=3 instead of 1/3
+        decimal (str): character to use as decimal point. defaults to '.'
     Returns:
         list: list of extracted numbers as floats
+    Note:
+        will always extract numbers formatted with a decimal dot/full stop,
+        such as '3.5', even if 'decimal' is specified.
     """
+    if decimal != '.':
+        text = normalize_decimals(text, decimal)
     results = _extract_numbers_with_text_en(tokenize(text),
                                             short_scale, ordinals)
     return [float(result.value) for result in results]
