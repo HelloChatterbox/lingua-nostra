@@ -27,6 +27,8 @@ from lingua_nostra.parse import get_gender
 from lingua_nostra.parse import match_one
 from lingua_nostra.parse import normalize
 from lingua_nostra.parse import extract_quantities
+from lingua_nostra.parse import extract_number_spans
+from lingua_nostra.lang.parse_en import extract_number_en_v2
 
 
 def setUpModule():
@@ -73,6 +75,240 @@ class TestNormalize(unittest.TestCase):
                                    remove_articles=False),
                          "this is an extra test")
 
+    def test_normalize_numbers(self):
+        self.assertEqual(normalize("remind me to do something at two to two"),
+                         "remind me to do something at 2 to 2")
+        self.assertEqual(normalize('what time will it be in two minutes'),
+                         'what time will it be in 2 minutes')
+        self.assertEqual(
+            normalize('What time will it be in twenty two minutes'),
+            'What time will it be in 22 minutes')
+        self.assertEqual(
+            normalize("remind me to do something at twenty to two"),
+            "remind me to do something at 20 to 2")
+
+        # TODO imperfect test, maybe should return 'my favorite numbers are 20 2',
+        #  let is pass for now since this is likely a STT issue if ever
+        #  encountered in the wild and is somewhat ambiguous, if this was
+        #  spoken by a human the result is what we expect, if in written form
+        #  it is ambiguous but could mean separate numbers
+        self.assertEqual(normalize('my favorite numbers are twenty 2'),
+                         'my favorite numbers are 22')
+        # TODO imperfect test, same as above, fixing would impact
+        #  extract_numbers quite a bit and require a non trivial ammount of
+        #  refactoring
+        self.assertEqual(normalize('my favorite numbers are 20 2'),
+                         'my favorite numbers are 22')
+
+        # test ordinals
+        self.assertEqual(normalize('this is the first'),
+                         'this is first')
+        self.assertEqual(normalize('this is the first second'),
+                         'this is first second')
+        self.assertEqual(normalize('this is the first second and third'),
+                         'this is first second and third')
+
+        # test fractions
+        self.assertEqual(normalize('whole hour'),
+                         'whole hour')
+        self.assertEqual(normalize('quarter hour'),
+                         'quarter hour')
+        self.assertEqual(normalize('halve hour'),
+                         'halve hour')
+        self.assertEqual(normalize('half hour'),
+                         'half hour')
+
+    def test_spaces(self):
+        self.assertEqual(normalize("  this   is  a    test"),
+                         "this is test")
+        self.assertEqual(normalize("  this   is  a    test  "),
+                         "this is test")
+        self.assertEqual(normalize("  this   is  one    test"),
+                         "this is 1 test")
+
+    def test_numbers(self):
+        self.assertEqual(normalize("this is a one two three  test"),
+                         "this is 1 2 3 test")
+        self.assertEqual(normalize("  it's  a four five six  test"),
+                         "it is 4 5 6 test")
+        self.assertEqual(normalize("it's  a seven eight nine test"),
+                         "it is 7 8 9 test")
+        self.assertEqual(normalize("it's a seven eight nine  test"),
+                         "it is 7 8 9 test")
+        self.assertEqual(normalize("that's a ten eleven twelve test"),
+                         "that is 10 11 12 test")
+        self.assertEqual(normalize("that's a thirteen fourteen test"),
+                         "that is 13 14 test")
+        self.assertEqual(normalize("that's fifteen sixteen seventeen"),
+                         "that is 15 16 17")
+        self.assertEqual(normalize("that's eighteen nineteen twenty"),
+                         "that is 18 19 20")
+        self.assertEqual(normalize("that's one nineteen twenty two"),
+                         "that is 1 19 22")
+        self.assertEqual(normalize("that's one hundred"),
+                         "that is 100")
+        self.assertEqual(normalize("that's one two twenty two"),
+                         "that is 1 2 22")
+        self.assertEqual(normalize("that's one and a half"),
+                         "that is 1 and half")
+        self.assertEqual(normalize("that's one and a half and five six"),
+                         "that is 1 and half and 5 6")
+
+    def test_contractions(self):
+        self.assertEqual(normalize("ain't"), "is not")
+        self.assertEqual(normalize("aren't"), "are not")
+        self.assertEqual(normalize("can't"), "can not")
+        self.assertEqual(normalize("could've"), "could have")
+        self.assertEqual(normalize("couldn't"), "could not")
+        self.assertEqual(normalize("didn't"), "did not")
+        self.assertEqual(normalize("doesn't"), "does not")
+        self.assertEqual(normalize("don't"), "do not")
+        self.assertEqual(normalize("gonna"), "going to")
+        self.assertEqual(normalize("gotta"), "got to")
+        self.assertEqual(normalize("hadn't"), "had not")
+        self.assertEqual(normalize("hadn't have"), "had not have")
+        self.assertEqual(normalize("hasn't"), "has not")
+        self.assertEqual(normalize("haven't"), "have not")
+        # TODO: Ambiguous with "he had"
+        self.assertEqual(normalize("he'd"), "he would")
+        self.assertEqual(normalize("he'll"), "he will")
+        # TODO: Ambiguous with "he has"
+        self.assertEqual(normalize("he's"), "he is")
+        # TODO: Ambiguous with "how would"
+        self.assertEqual(normalize("how'd"), "how did")
+        self.assertEqual(normalize("how'll"), "how will")
+        # TODO: Ambiguous with "how has" and "how does"
+        self.assertEqual(normalize("how's"), "how is")
+        # TODO: Ambiguous with "I had"
+        self.assertEqual(normalize("I'd"), "I would")
+        self.assertEqual(normalize("I'll"), "I will")
+        self.assertEqual(normalize("I'm"), "I am")
+        self.assertEqual(normalize("I've"), "I have")
+        self.assertEqual(normalize("I haven't"), "I have not")
+        self.assertEqual(normalize("isn't"), "is not")
+        self.assertEqual(normalize("it'd"), "it would")
+        self.assertEqual(normalize("it'll"), "it will")
+        # TODO: Ambiguous with "it has"
+        self.assertEqual(normalize("it's"), "it is")
+        self.assertEqual(normalize("it isn't"), "it is not")
+        self.assertEqual(normalize("mightn't"), "might not")
+        self.assertEqual(normalize("might've"), "might have")
+        self.assertEqual(normalize("mustn't"), "must not")
+        self.assertEqual(normalize("mustn't have"), "must not have")
+        self.assertEqual(normalize("must've"), "must have")
+        self.assertEqual(normalize("needn't"), "need not")
+        self.assertEqual(normalize("oughtn't"), "ought not")
+        self.assertEqual(normalize("shan't"), "shall not")
+        # TODO: Ambiguous wiht "she had"
+        self.assertEqual(normalize("she'd"), "she would")
+        self.assertEqual(normalize("she hadn't"), "she had not")
+        self.assertEqual(normalize("she'll"), "she will")
+        self.assertEqual(normalize("she's"), "she is")
+        self.assertEqual(normalize("she isn't"), "she is not")
+        self.assertEqual(normalize("should've"), "should have")
+        self.assertEqual(normalize("shouldn't"), "should not")
+        self.assertEqual(normalize("shouldn't have"), "should not have")
+        self.assertEqual(normalize("somebody's"), "somebody is")
+        # TODO: Ambiguous with "someone had"
+        self.assertEqual(normalize("someone'd"), "someone would")
+        self.assertEqual(normalize("someone hadn't"), "someone had not")
+        self.assertEqual(normalize("someone'll"), "someone will")
+        # TODO: Ambiguous with "someone has"
+        self.assertEqual(normalize("someone's"), "someone is")
+        self.assertEqual(normalize("that'll"), "that will")
+        # TODO: Ambiguous with "that has"
+        self.assertEqual(normalize("that's"), "that is")
+        # TODO: Ambiguous with "that had"
+        self.assertEqual(normalize("that'd"), "that would")
+        # TODO: Ambiguous with "there had"
+        self.assertEqual(normalize("there'd"), "there would")
+        self.assertEqual(normalize("there're"), "there are")
+        # TODO: Ambiguous with "there has"
+        self.assertEqual(normalize("there's"), "there is")
+        # TODO: Ambiguous with "they had"
+        self.assertEqual(normalize("they'd"), "they would")
+        self.assertEqual(normalize("they'll"), "they will")
+        self.assertEqual(normalize("they won't have"), "they will not have")
+        self.assertEqual(normalize("they're"), "they are")
+        self.assertEqual(normalize("they've"), "they have")
+        self.assertEqual(normalize("they haven't"), "they have not")
+        self.assertEqual(normalize("wasn't"), "was not")
+        # TODO: Ambiguous wiht "we had"
+        self.assertEqual(normalize("we'd"), "we would")
+        self.assertEqual(normalize("we would've"), "we would have")
+        self.assertEqual(normalize("we wouldn't"), "we would not")
+        self.assertEqual(normalize("we wouldn't have"), "we would not have")
+        self.assertEqual(normalize("we'll"), "we will")
+        self.assertEqual(normalize("we won't have"), "we will not have")
+        self.assertEqual(normalize("we're"), "we are")
+        self.assertEqual(normalize("we've"), "we have")
+        self.assertEqual(normalize("weren't"), "were not")
+        self.assertEqual(normalize("what'd"), "what did")
+        self.assertEqual(normalize("what'll"), "what will")
+        self.assertEqual(normalize("what're"), "what are")
+        # TODO: Ambiguous with "what has" / "what does")
+        self.assertEqual(normalize("whats"), "what is")
+        self.assertEqual(normalize("what's"), "what is")
+        self.assertEqual(normalize("what've"), "what have")
+        # TODO: Ambiguous with "when has"
+        self.assertEqual(normalize("when's"), "when is")
+        self.assertEqual(normalize("where'd"), "where did")
+        # TODO: Ambiguous with "where has" / where does"
+        self.assertEqual(normalize("where's"), "where is")
+        self.assertEqual(normalize("where've"), "where have")
+        # TODO: Ambiguous with "who had" "who did")
+        self.assertEqual(normalize("who'd"), "who would")
+        self.assertEqual(normalize("who'd've"), "who would have")
+        self.assertEqual(normalize("who'll"), "who will")
+        self.assertEqual(normalize("who're"), "who are")
+        # TODO: Ambiguous with "who has" / "who does"
+        self.assertEqual(normalize("who's"), "who is")
+        self.assertEqual(normalize("who've"), "who have")
+        self.assertEqual(normalize("why'd"), "why did")
+        self.assertEqual(normalize("why're"), "why are")
+        # TODO: Ambiguous with "why has" / "why does"
+        self.assertEqual(normalize("why's"), "why is")
+        self.assertEqual(normalize("won't"), "will not")
+        self.assertEqual(normalize("won't've"), "will not have")
+        self.assertEqual(normalize("would've"), "would have")
+        self.assertEqual(normalize("wouldn't"), "would not")
+        self.assertEqual(normalize("wouldn't've"), "would not have")
+        self.assertEqual(normalize("ya'll"), "you all")
+        self.assertEqual(normalize("y'all"), "you all")
+        self.assertEqual(normalize("y'ain't"), "you are not")
+        # TODO: Ambiguous with "you had"
+        self.assertEqual(normalize("you'd"), "you would")
+        self.assertEqual(normalize("you'd've"), "you would have")
+        self.assertEqual(normalize("you'll"), "you will")
+        self.assertEqual(normalize("you're"), "you are")
+        self.assertEqual(normalize("you aren't"), "you are not")
+        self.assertEqual(normalize("you've"), "you have")
+        self.assertEqual(normalize("you haven't"), "you have not")
+
+    def test_combinations(self):
+        self.assertEqual(normalize("I couldn't have guessed there'd be two"),
+                         "I could not have guessed there would be 2")
+        self.assertEqual(normalize("I wouldn't have"), "I would not have")
+        self.assertEqual(normalize("I hadn't been there"),
+                         "I had not been there")
+        self.assertEqual(normalize("I would've"), "I would have")
+        self.assertEqual(normalize("it hadn't"), "it had not")
+        self.assertEqual(normalize("it hadn't have"), "it had not have")
+        self.assertEqual(normalize("it would've"), "it would have")
+        self.assertEqual(normalize("she wouldn't have"), "she would not have")
+        self.assertEqual(normalize("she would've"), "she would have")
+        self.assertEqual(normalize("someone wouldn't have"),
+                         "someone would not have")
+        self.assertEqual(normalize("someone would've"), "someone would have")
+        self.assertEqual(normalize("what's the weather like"),
+                         "what is weather like")
+        self.assertEqual(normalize("that's what I told you"),
+                         "that is what I told you")
+
+        self.assertEqual(normalize("whats 8 + 4"), "what is 8 + 4")
+
+
+class TestExtractNumber(unittest.TestCase):
     def test_extract_number_decimal_markers(self):
         # Test decimal normalization
         self.assertEqual(extract_number("4,4", decimal=','), 4.4)
@@ -307,6 +543,49 @@ class TestNormalize(unittest.TestCase):
         self.assertEqual(extract_number("a couple thousand beers"), 2000)
         self.assertEqual(extract_number("totally 100%"), 100)
 
+    def test_multiple_numbers(self):
+        self.assertEqual(extract_numbers("this is a one two three  test"),
+                         [1.0, 2.0, 3.0])
+        self.assertEqual(extract_numbers("it's  a four five six  test"),
+                         [4.0, 5.0, 6.0])
+        self.assertEqual(extract_numbers("this is a ten eleven twelve  test"),
+                         [10.0, 11.0, 12.0])
+        self.assertEqual(extract_numbers("this is a one twenty one  test"),
+                         [1.0, 21.0])
+        self.assertEqual(extract_numbers("1 dog, seven pigs, macdonald had a "
+                                         "farm, 3 times 5 macarena"),
+                         [1, 7, 3, 5])
+        self.assertEqual(extract_numbers("two beers for two bears"),
+                         [2.0, 2.0])
+        self.assertEqual(extract_numbers("twenty 20 twenty"),
+                         [20, 20, 20])
+        self.assertEqual(extract_numbers("twenty 20 22"),
+                         [20.0, 20.0, 22.0])
+        self.assertEqual(extract_numbers("twenty twenty two twenty"),
+                         [20, 22, 20])
+        self.assertEqual(extract_numbers("twenty 2"),
+                         [22.0])
+        self.assertEqual(extract_numbers("twenty 20 twenty 2"),
+                         [20, 20, 22])
+        self.assertEqual(extract_numbers("third one"),
+                         [1 / 3, 1])
+        self.assertEqual(extract_numbers("third one", ordinals=True), [3])
+        self.assertEqual(extract_numbers("six trillion", short_scale=True),
+                         [6e12])
+        self.assertEqual(extract_numbers("six trillion", short_scale=False),
+                         [6e18])
+        self.assertEqual(extract_numbers("two pigs and six trillion bacteria",
+                                         short_scale=True), [2, 6e12])
+        self.assertEqual(extract_numbers("two pigs and six trillion bacteria",
+                                         short_scale=False), [2, 6e18])
+        self.assertEqual(extract_numbers("thirty second or first",
+                                         ordinals=True), [32, 1])
+        self.assertEqual(extract_numbers("this is a seven eight nine and a"
+                                         " half test"),
+                         [7.0, 8.0, 9.5])
+
+
+class TestExtractDuration(unittest.TestCase):
     def test_extract_duration_en(self):
         self.assertEqual(extract_duration("10 seconds"),
                          (timedelta(seconds=10.0), ""))
@@ -348,6 +627,8 @@ class TestNormalize(unittest.TestCase):
         self.assertEqual(extract_duration("Nineteen minutes past THE hour"),
                          (timedelta(minutes=19), "past THE hour"))
 
+
+class TestExtractDateTime(unittest.TestCase):
     def test_extractdatetime_fractions_en(self):
         def extractWithFormat(text):
             date = datetime(2017, 6, 27, 13, 4,
@@ -792,49 +1073,6 @@ class TestNormalize(unittest.TestCase):
         testExtract("lets meet in 5seconds",
                     "2017-06-27 10:01:07", "lets meet")
 
-    def test_normalize_numbers(self):
-        self.assertEqual(normalize("remind me to do something at two to two"),
-                         "remind me to do something at 2 to 2")
-        self.assertEqual(normalize('what time will it be in two minutes'),
-                         'what time will it be in 2 minutes')
-        self.assertEqual(
-            normalize('What time will it be in twenty two minutes'),
-            'What time will it be in 22 minutes')
-        self.assertEqual(
-            normalize("remind me to do something at twenty to two"),
-            "remind me to do something at 20 to 2")
-
-        # TODO imperfect test, maybe should return 'my favorite numbers are 20 2',
-        #  let is pass for now since this is likely a STT issue if ever
-        #  encountered in the wild and is somewhat ambiguous, if this was
-        #  spoken by a human the result is what we expect, if in written form
-        #  it is ambiguous but could mean separate numbers
-        self.assertEqual(normalize('my favorite numbers are twenty 2'),
-                         'my favorite numbers are 22')
-        # TODO imperfect test, same as above, fixing would impact
-        #  extract_numbers quite a bit and require a non trivial ammount of
-        #  refactoring
-        self.assertEqual(normalize('my favorite numbers are 20 2'),
-                         'my favorite numbers are 22')
-
-        # test ordinals
-        self.assertEqual(normalize('this is the first'),
-                         'this is first')
-        self.assertEqual(normalize('this is the first second'),
-                         'this is first second')
-        self.assertEqual(normalize('this is the first second and third'),
-                         'this is first second and third')
-
-        # test fractions
-        self.assertEqual(normalize('whole hour'),
-                         'whole hour')
-        self.assertEqual(normalize('quarter hour'),
-                         'quarter hour')
-        self.assertEqual(normalize('halve hour'),
-                         'halve hour')
-        self.assertEqual(normalize('half hour'),
-                         'half hour')
-
     def test_extract_date_with_number_words(self):
         now = datetime(2019, 7, 4, 8, 1, 2, tzinfo=default_timezone())
         self.assertEqual(
@@ -848,236 +1086,8 @@ class TestNormalize(unittest.TestCase):
                              now)[0],
             datetime(2019, 7, 4, 11, 21, 2, tzinfo=default_timezone()))
 
-    def test_spaces(self):
-        self.assertEqual(normalize("  this   is  a    test"),
-                         "this is test")
-        self.assertEqual(normalize("  this   is  a    test  "),
-                         "this is test")
-        self.assertEqual(normalize("  this   is  one    test"),
-                         "this is 1 test")
 
-    def test_numbers(self):
-        self.assertEqual(normalize("this is a one two three  test"),
-                         "this is 1 2 3 test")
-        self.assertEqual(normalize("  it's  a four five six  test"),
-                         "it is 4 5 6 test")
-        self.assertEqual(normalize("it's  a seven eight nine test"),
-                         "it is 7 8 9 test")
-        self.assertEqual(normalize("it's a seven eight nine  test"),
-                         "it is 7 8 9 test")
-        self.assertEqual(normalize("that's a ten eleven twelve test"),
-                         "that is 10 11 12 test")
-        self.assertEqual(normalize("that's a thirteen fourteen test"),
-                         "that is 13 14 test")
-        self.assertEqual(normalize("that's fifteen sixteen seventeen"),
-                         "that is 15 16 17")
-        self.assertEqual(normalize("that's eighteen nineteen twenty"),
-                         "that is 18 19 20")
-        self.assertEqual(normalize("that's one nineteen twenty two"),
-                         "that is 1 19 22")
-        self.assertEqual(normalize("that's one hundred"),
-                         "that is 100")
-        self.assertEqual(normalize("that's one two twenty two"),
-                         "that is 1 2 22")
-        self.assertEqual(normalize("that's one and a half"),
-                         "that is 1 and half")
-        self.assertEqual(normalize("that's one and a half and five six"),
-                         "that is 1 and half and 5 6")
-
-    def test_multiple_numbers(self):
-        self.assertEqual(extract_numbers("this is a one two three  test"),
-                         [1.0, 2.0, 3.0])
-        self.assertEqual(extract_numbers("it's  a four five six  test"),
-                         [4.0, 5.0, 6.0])
-        self.assertEqual(extract_numbers("this is a ten eleven twelve  test"),
-                         [10.0, 11.0, 12.0])
-        self.assertEqual(extract_numbers("this is a one twenty one  test"),
-                         [1.0, 21.0])
-        self.assertEqual(extract_numbers("1 dog, seven pigs, macdonald had a "
-                                         "farm, 3 times 5 macarena"),
-                         [1, 7, 3, 5])
-        self.assertEqual(extract_numbers("two beers for two bears"),
-                         [2.0, 2.0])
-        self.assertEqual(extract_numbers("twenty 20 twenty"),
-                         [20, 20, 20])
-        self.assertEqual(extract_numbers("twenty 20 22"),
-                         [20.0, 20.0, 22.0])
-        self.assertEqual(extract_numbers("twenty twenty two twenty"),
-                         [20, 22, 20])
-        self.assertEqual(extract_numbers("twenty 2"),
-                         [22.0])
-        self.assertEqual(extract_numbers("twenty 20 twenty 2"),
-                         [20, 20, 22])
-        self.assertEqual(extract_numbers("third one"),
-                         [1 / 3, 1])
-        self.assertEqual(extract_numbers("third one", ordinals=True), [3])
-        self.assertEqual(extract_numbers("six trillion", short_scale=True),
-                         [6e12])
-        self.assertEqual(extract_numbers("six trillion", short_scale=False),
-                         [6e18])
-        self.assertEqual(extract_numbers("two pigs and six trillion bacteria",
-                                         short_scale=True), [2, 6e12])
-        self.assertEqual(extract_numbers("two pigs and six trillion bacteria",
-                                         short_scale=False), [2, 6e18])
-        self.assertEqual(extract_numbers("thirty second or first",
-                                         ordinals=True), [32, 1])
-        self.assertEqual(extract_numbers("this is a seven eight nine and a"
-                                         " half test"),
-                         [7.0, 8.0, 9.5])
-
-    def test_contractions(self):
-        self.assertEqual(normalize("ain't"), "is not")
-        self.assertEqual(normalize("aren't"), "are not")
-        self.assertEqual(normalize("can't"), "can not")
-        self.assertEqual(normalize("could've"), "could have")
-        self.assertEqual(normalize("couldn't"), "could not")
-        self.assertEqual(normalize("didn't"), "did not")
-        self.assertEqual(normalize("doesn't"), "does not")
-        self.assertEqual(normalize("don't"), "do not")
-        self.assertEqual(normalize("gonna"), "going to")
-        self.assertEqual(normalize("gotta"), "got to")
-        self.assertEqual(normalize("hadn't"), "had not")
-        self.assertEqual(normalize("hadn't have"), "had not have")
-        self.assertEqual(normalize("hasn't"), "has not")
-        self.assertEqual(normalize("haven't"), "have not")
-        # TODO: Ambiguous with "he had"
-        self.assertEqual(normalize("he'd"), "he would")
-        self.assertEqual(normalize("he'll"), "he will")
-        # TODO: Ambiguous with "he has"
-        self.assertEqual(normalize("he's"), "he is")
-        # TODO: Ambiguous with "how would"
-        self.assertEqual(normalize("how'd"), "how did")
-        self.assertEqual(normalize("how'll"), "how will")
-        # TODO: Ambiguous with "how has" and "how does"
-        self.assertEqual(normalize("how's"), "how is")
-        # TODO: Ambiguous with "I had"
-        self.assertEqual(normalize("I'd"), "I would")
-        self.assertEqual(normalize("I'll"), "I will")
-        self.assertEqual(normalize("I'm"), "I am")
-        self.assertEqual(normalize("I've"), "I have")
-        self.assertEqual(normalize("I haven't"), "I have not")
-        self.assertEqual(normalize("isn't"), "is not")
-        self.assertEqual(normalize("it'd"), "it would")
-        self.assertEqual(normalize("it'll"), "it will")
-        # TODO: Ambiguous with "it has"
-        self.assertEqual(normalize("it's"), "it is")
-        self.assertEqual(normalize("it isn't"), "it is not")
-        self.assertEqual(normalize("mightn't"), "might not")
-        self.assertEqual(normalize("might've"), "might have")
-        self.assertEqual(normalize("mustn't"), "must not")
-        self.assertEqual(normalize("mustn't have"), "must not have")
-        self.assertEqual(normalize("must've"), "must have")
-        self.assertEqual(normalize("needn't"), "need not")
-        self.assertEqual(normalize("oughtn't"), "ought not")
-        self.assertEqual(normalize("shan't"), "shall not")
-        # TODO: Ambiguous wiht "she had"
-        self.assertEqual(normalize("she'd"), "she would")
-        self.assertEqual(normalize("she hadn't"), "she had not")
-        self.assertEqual(normalize("she'll"), "she will")
-        self.assertEqual(normalize("she's"), "she is")
-        self.assertEqual(normalize("she isn't"), "she is not")
-        self.assertEqual(normalize("should've"), "should have")
-        self.assertEqual(normalize("shouldn't"), "should not")
-        self.assertEqual(normalize("shouldn't have"), "should not have")
-        self.assertEqual(normalize("somebody's"), "somebody is")
-        # TODO: Ambiguous with "someone had"
-        self.assertEqual(normalize("someone'd"), "someone would")
-        self.assertEqual(normalize("someone hadn't"), "someone had not")
-        self.assertEqual(normalize("someone'll"), "someone will")
-        # TODO: Ambiguous with "someone has"
-        self.assertEqual(normalize("someone's"), "someone is")
-        self.assertEqual(normalize("that'll"), "that will")
-        # TODO: Ambiguous with "that has"
-        self.assertEqual(normalize("that's"), "that is")
-        # TODO: Ambiguous with "that had"
-        self.assertEqual(normalize("that'd"), "that would")
-        # TODO: Ambiguous with "there had"
-        self.assertEqual(normalize("there'd"), "there would")
-        self.assertEqual(normalize("there're"), "there are")
-        # TODO: Ambiguous with "there has"
-        self.assertEqual(normalize("there's"), "there is")
-        # TODO: Ambiguous with "they had"
-        self.assertEqual(normalize("they'd"), "they would")
-        self.assertEqual(normalize("they'll"), "they will")
-        self.assertEqual(normalize("they won't have"), "they will not have")
-        self.assertEqual(normalize("they're"), "they are")
-        self.assertEqual(normalize("they've"), "they have")
-        self.assertEqual(normalize("they haven't"), "they have not")
-        self.assertEqual(normalize("wasn't"), "was not")
-        # TODO: Ambiguous wiht "we had"
-        self.assertEqual(normalize("we'd"), "we would")
-        self.assertEqual(normalize("we would've"), "we would have")
-        self.assertEqual(normalize("we wouldn't"), "we would not")
-        self.assertEqual(normalize("we wouldn't have"), "we would not have")
-        self.assertEqual(normalize("we'll"), "we will")
-        self.assertEqual(normalize("we won't have"), "we will not have")
-        self.assertEqual(normalize("we're"), "we are")
-        self.assertEqual(normalize("we've"), "we have")
-        self.assertEqual(normalize("weren't"), "were not")
-        self.assertEqual(normalize("what'd"), "what did")
-        self.assertEqual(normalize("what'll"), "what will")
-        self.assertEqual(normalize("what're"), "what are")
-        # TODO: Ambiguous with "what has" / "what does")
-        self.assertEqual(normalize("whats"), "what is")
-        self.assertEqual(normalize("what's"), "what is")
-        self.assertEqual(normalize("what've"), "what have")
-        # TODO: Ambiguous with "when has"
-        self.assertEqual(normalize("when's"), "when is")
-        self.assertEqual(normalize("where'd"), "where did")
-        # TODO: Ambiguous with "where has" / where does"
-        self.assertEqual(normalize("where's"), "where is")
-        self.assertEqual(normalize("where've"), "where have")
-        # TODO: Ambiguous with "who had" "who did")
-        self.assertEqual(normalize("who'd"), "who would")
-        self.assertEqual(normalize("who'd've"), "who would have")
-        self.assertEqual(normalize("who'll"), "who will")
-        self.assertEqual(normalize("who're"), "who are")
-        # TODO: Ambiguous with "who has" / "who does"
-        self.assertEqual(normalize("who's"), "who is")
-        self.assertEqual(normalize("who've"), "who have")
-        self.assertEqual(normalize("why'd"), "why did")
-        self.assertEqual(normalize("why're"), "why are")
-        # TODO: Ambiguous with "why has" / "why does"
-        self.assertEqual(normalize("why's"), "why is")
-        self.assertEqual(normalize("won't"), "will not")
-        self.assertEqual(normalize("won't've"), "will not have")
-        self.assertEqual(normalize("would've"), "would have")
-        self.assertEqual(normalize("wouldn't"), "would not")
-        self.assertEqual(normalize("wouldn't've"), "would not have")
-        self.assertEqual(normalize("ya'll"), "you all")
-        self.assertEqual(normalize("y'all"), "you all")
-        self.assertEqual(normalize("y'ain't"), "you are not")
-        # TODO: Ambiguous with "you had"
-        self.assertEqual(normalize("you'd"), "you would")
-        self.assertEqual(normalize("you'd've"), "you would have")
-        self.assertEqual(normalize("you'll"), "you will")
-        self.assertEqual(normalize("you're"), "you are")
-        self.assertEqual(normalize("you aren't"), "you are not")
-        self.assertEqual(normalize("you've"), "you have")
-        self.assertEqual(normalize("you haven't"), "you have not")
-
-    def test_combinations(self):
-        self.assertEqual(normalize("I couldn't have guessed there'd be two"),
-                         "I could not have guessed there would be 2")
-        self.assertEqual(normalize("I wouldn't have"), "I would not have")
-        self.assertEqual(normalize("I hadn't been there"),
-                         "I had not been there")
-        self.assertEqual(normalize("I would've"), "I would have")
-        self.assertEqual(normalize("it hadn't"), "it had not")
-        self.assertEqual(normalize("it hadn't have"), "it had not have")
-        self.assertEqual(normalize("it would've"), "it would have")
-        self.assertEqual(normalize("she wouldn't have"), "she would not have")
-        self.assertEqual(normalize("she would've"), "she would have")
-        self.assertEqual(normalize("someone wouldn't have"),
-                         "someone would not have")
-        self.assertEqual(normalize("someone would've"), "someone would have")
-        self.assertEqual(normalize("what's the weather like"),
-                         "what is weather like")
-        self.assertEqual(normalize("that's what I told you"),
-                         "that is what I told you")
-
-        self.assertEqual(normalize("whats 8 + 4"), "what is 8 + 4")
-
+class TestGetGender(unittest.TestCase):
     # TODO not localized; needed in english?
     def test_gender(self):
         self.assertRaises((AttributeError, FunctionNotLocalizedError),
@@ -1110,6 +1120,329 @@ class TestQuantulum(unittest.TestCase):
               'unit': 'teraelectron volt',
               'value': 12.9}]
         )
+
+
+class TestNumberSpans(unittest.TestCase):
+    def test_number_spans(self):
+        self.assertEqual(extract_number_spans("this is test 1 2 3 666 1.5"),
+                         [(1, (13, 14)),
+                          (2, (15, 16)),
+                          (3, (17, 18)),
+                          (666, (19, 22)),
+                          (1.5, (23, 26))])
+        self.assertEqual(extract_number_spans("this is test 1.5.5"),
+                         [(1.5, (13, 16)),
+                          (5, (17, 18))])
+
+    def test_number_spans_frac(self):
+        self.assertEqual(extract_number_spans("2 and 3/4"),
+                         [(2.75, (0, 9))])
+        self.assertEqual(extract_number_spans("2 and 3/4 and after that "
+                                              "comes 1.5"),
+                         [(2.75, (0, 9)),
+                          (1.5, (31, 34))])
+        self.assertEqual(extract_number_spans("2 and 3/4 and after that "
+                                              "comes 0.5"),
+                         [(2.75, (0, 9)),
+                          (0.5, (31, 34))])
+        self.assertEqual(extract_number_spans("2 and 3/4 and 27"),
+                         [(2.75, (0, 9)),
+                          (27, (14, 16))])
+
+    def test_number_spoken_frac(self):
+        self.assertEqual(extract_number_spans("half cup"),
+                         [(0.5, (0, 4))])
+        self.assertEqual(extract_number_spans("third cup"),
+                         [(1 / 3, (0, 5))])
+
+    def test_number_ordinals(self):
+        self.assertEqual(extract_number_spans("this is the 1st the 2nd the "
+                                              "3rd the 4th and the Nth"),
+                         [(1, (12, 15)),
+                          (2, (20, 23)),
+                          (3, (28, 31)),
+                          (4, (36, 39))])
+
+    def test_number_spoken_ordinals(self):
+        self.assertEqual(extract_number_spans("fourth cup", ordinals=True),
+                         [(4, (0, 6))])
+        self.assertEqual(extract_number_spans("third cup", ordinals=True),
+                         [(3, (0, 5))])
+
+    def test_integers(self):
+        self.assertEqual(extract_number_spans("number one"),
+                         [(1, (7, 10))])
+        self.assertEqual(extract_number_spans("number one number two number "
+                                              "four"),
+                         [(1, (7, 10)),
+                          (2, (20, 23)),
+                          (3, (28, 31)),
+                          (4, (36, 39))])
+
+    def test_scale(self):
+        self.assertEqual(extract_number_spans("a trillion numbers"),
+                         [(1e+12, (2, 10))])
+        self.assertEqual(extract_number_spans("a trillion numbers",
+                                              short_scale=False),
+                         [(1e+18, (2, 10))])
+
+
+class TestExtractNumberV2(unittest.TestCase):
+    def test_extract_percent(self):
+        self.assertEqual(extract_number_en_v2("totally 100%"), 100)
+
+    def test_extract_number_decimal_markers(self):
+        # Test decimal normalization
+        self.assertEqual(extract_number_en_v2("4,4", decimal=','), 4.4)
+        self.assertEqual(extract_number_en_v2("we have 3,5 kilometers to go",
+                                              decimal=','), 3.5)
+
+    def test_extract_number_priority(self):
+        # sanity check
+        self.assertEqual(extract_number_en_v2("third", ordinals=True), 3)
+        self.assertEqual(extract_number_en_v2("sixth", ordinals=True), 6)
+        self.assertEqual(extract_number_en_v2("sixth third", ordinals=True), 6)
+        self.assertEqual(extract_number_en_v2("third sixth", ordinals=True), 3)
+
+        # TODO FIXME
+        self.assertEqual(extract_number_en_v2("Twenty two and Three Fifths",
+                                              ordinals=True), 22)
+
+    def test_extract_number_explicit_ordinals(self):
+        # test explicit ordinals
+        self.assertEqual(extract_number_en_v2("this is the 1st",
+                                              ordinals=True), 1)
+        self.assertEqual(extract_number_en_v2("this is the 2nd",
+                                              ordinals=False), 2)
+        self.assertEqual(extract_number_en_v2("this is the 3rd",
+                                              ordinals=None), 3)
+        self.assertEqual(extract_number_en_v2("this is the 4th",
+                                              ordinals=None), 4)
+        self.assertEqual(extract_number_en_v2("this is the 7th test",
+                                              ordinals=True), 7)
+        self.assertEqual(extract_number_en_v2("this is the 7th test",
+                                              ordinals=False), 7)
+        self.assertEqual(extract_number_en_v2("this is the 1st test"), 1)
+        self.assertEqual(extract_number_en_v2("this is the 2nd test"), 2)
+        self.assertEqual(extract_number_en_v2("this is the 3rd test"), 3)
+        self.assertEqual(extract_number_en_v2("this is the 31st test"), 31)
+        self.assertEqual(extract_number_en_v2("this is the 32nd test"), 32)
+        self.assertEqual(extract_number_en_v2("this is the 33rd test"), 33)
+        self.assertEqual(extract_number_en_v2("this is the 34th test"), 34)
+
+        self.assertTrue(extract_number_en_v2("this is the nth test") is False)
+
+    def test_extract_number_spoken_ordinals(self):
+        # test non ambiguous ordinals
+        self.assertEqual(extract_number_en_v2("this is the first test",
+                                              ordinals=True), 1)
+        self.assertEqual(extract_number_en_v2("this is the first test",
+                                              ordinals=False), False)
+        self.assertEqual(extract_number_en_v2("this is the first test",
+                                              ordinals=None), False)
+
+        # test ambiguous ordinal/time unit
+        self.assertEqual(extract_number_en_v2("this is second test",
+                                              ordinals=True), 2)
+        self.assertEqual(extract_number_en_v2("this is second test",
+                                              ordinals=False), False)
+        self.assertEqual(extract_number_en_v2("remind me in a second",
+                                              ordinals=True), 2)
+        self.assertEqual(extract_number_en_v2("remind me in a second",
+                                              ordinals=False), False)
+        self.assertEqual(extract_number_en_v2("remind me in a second",
+                                              ordinals=None), False)
+
+        # test ambiguous ordinal/fractional
+        self.assertEqual(extract_number_en_v2("this is the third test",
+                                              ordinals=True), 3.0)
+        self.assertEqual(extract_number_en_v2("this is the third test",
+                                              ordinals=False), 1.0 / 3.0)
+        self.assertEqual(extract_number_en_v2("this is the third test",
+                                              ordinals=None), False)
+
+        # TODO FIXME
+        self.assertEqual(extract_number_en_v2("one third of a cup",
+                                              ordinals=False), 1.0 / 3.0)
+        self.assertEqual(extract_number_en_v2("one third of a cup",
+                                              ordinals=True), 3)
+        self.assertEqual(extract_number_en_v2("one third of a cup",
+                                              ordinals=None), 1)
+
+    def test_extract_number_nth_one(self):
+        # test the Nth one
+        self.assertEqual(extract_number_en_v2("the fourth one",
+                                              ordinals=True), 4.0)
+        self.assertEqual(extract_number_en_v2("you are the second one",
+                                              ordinals=False), 1)
+        self.assertEqual(extract_number_en_v2("you are the second one",
+                                              ordinals=True), 2)
+        self.assertEqual(extract_number_en_v2("you are the 1st one",
+                                              ordinals=None), 1)
+        self.assertEqual(extract_number_en_v2("you are the 2nd one",
+                                              ordinals=None), 2)
+        self.assertEqual(extract_number_en_v2("you are the 3rd one",
+                                              ordinals=None), 3)
+        self.assertEqual(extract_number_en_v2("you are the 8th one",
+                                              ordinals=None), 8)
+
+        # TODO FIXME
+        self.assertEqual(extract_number_en_v2("the thirty sixth one",
+                                              ordinals=True), 36.0)
+
+    def test_scale(self):
+        # test big numbers / short vs long scale
+        self.assertEqual(extract_number_en_v2("this is the billionth test",
+                                              ordinals=True), 1e09)
+        self.assertEqual(extract_number_en_v2("this is the billionth test",
+                                              ordinals=None), False)
+
+        self.assertEqual(extract_number_en_v2("this is the billionth test",
+                                              ordinals=False), 1e-9)
+        self.assertEqual(extract_number_en_v2("this is the billionth test",
+                                              ordinals=True,
+                                              short_scale=False), 1e12)
+        self.assertEqual(extract_number_en_v2("this is the billionth test",
+                                              ordinals=None,
+                                              short_scale=False), False)
+        self.assertEqual(extract_number_en_v2("this is the billionth test",
+                                              short_scale=False), 1e-12)
+
+    def test_extract_number_ambiguous_fraction_ordinal(self):
+        # confirm these are not cumulative, prev version would multiple them
+        self.assertEqual(extract_number_en_v2("sixth third", ordinals=False),
+                         1 / 6)
+
+        # test plurals
+        # NOTE plurals are never considered ordinals, but also not
+        # considered explicit fractions
+        self.assertEqual(extract_number_en_v2("2 fifths",
+                                              ordinals=True), 2)
+        self.assertEqual(extract_number_en_v2("2 fifth",
+                                              ordinals=True), 5)
+        self.assertEqual(extract_number_en_v2("2 fifths",
+                                              ordinals=False), 2 / 5)
+        self.assertEqual(extract_number_en_v2("2 fifths",
+                                              ordinals=None), 2)
+
+        self.assertEqual(extract_number_en_v2("Twenty two and Three Fifths"),
+                         22.6)
+
+        # test multiple ambiguous
+        self.assertEqual(extract_number_en_v2("sixth third", ordinals=None),
+                         False)
+        self.assertEqual(extract_number_en_v2("thirty second", ordinals=False),
+                         30)
+        self.assertEqual(extract_number_en_v2("thirty second", ordinals=None),
+                         30)
+        self.assertEqual(extract_number_en_v2("thirty second", ordinals=True),
+                         32)
+
+        self.assertEqual(extract_number_en_v2("sixth third", ordinals=False),
+                         6)
+
+    def test_extract_number_negative(self):
+        self.assertEqual(extract_number_en_v2("minus two"), -2)
+        self.assertEqual(extract_number_en_v2("minus 2"), -2)
+        self.assertEqual(extract_number_en_v2("negative two"), -2)
+        self.assertEqual(extract_number_en_v2("minus 1/3"), - 1 / 3)
+        self.assertEqual(extract_number_en_v2("-2"), -2)
+        self.assertEqual(extract_number_en_v2("- 2"), -2)
+        self.assertEqual(extract_number_en_v2("-1/3"), - 1/3)
+        self.assertEqual(extract_number_en_v2("- 1/3"), - 1 / 3)
+
+    def test_extract_number_fracs(self):
+        self.assertEqual(extract_number_en_v2("1/3 cups"), 1.0 / 3.0)
+        self.assertEqual(extract_number_en_v2("quarter cup"), 0.25)
+        self.assertEqual(extract_number_en_v2("1/4 cup"), 0.25)
+        self.assertEqual(extract_number_en_v2("2/3 cups"), 2.0 / 3.0)
+        self.assertEqual(extract_number_en_v2("3/4 cups"), 3.0 / 4.0)
+        self.assertEqual(extract_number_en_v2("1 and 3/4 cups"), 1.75)
+
+        # TODO FIXME
+        self.assertEqual(extract_number_en_v2("three quarter cups"), 3.0 / 4.0)
+        self.assertEqual(extract_number_en_v2("three quarters cups"),
+                         3.0 / 4.0)
+        self.assertEqual(extract_number_en_v2("one and one half cups"), 1.5)
+        self.assertEqual(extract_number_en_v2("one and a half cups"), 1.5)
+        self.assertEqual(extract_number_en_v2("one cup and a half"), 1.5)
+        self.assertEqual(extract_number_en_v2("1 cup and a half"), 1.5)
+        self.assertEqual(extract_number_en_v2("one fourth cup"), 0.25)
+
+    def test_extract_number(self):
+        self.assertEqual(extract_number_en_v2("this is 2 test"), 2)
+        self.assertEqual(extract_number_en_v2("this is test number 4"), 4)
+        self.assertEqual(extract_number_en_v2("three cups"), 3)
+        self.assertEqual(extract_number_en_v2("twenty two"), 22)
+        self.assertEqual(extract_number_en_v2(
+            "Twenty two with a leading capital letter"), 22)
+        self.assertEqual(extract_number_en_v2(
+            "twenty Two with Two capital letters"), 22)
+        self.assertEqual(extract_number_en_v2(
+            "twenty Two with mixed capital letters"), 22)
+        self.assertEqual(extract_number_en_v2("two hundred"), 200)
+        self.assertEqual(extract_number_en_v2("nine thousand"), 9000)
+        self.assertEqual(extract_number_en_v2("six hundred sixty six"), 666)
+        self.assertEqual(extract_number_en_v2("two million"), 2000000)
+        self.assertEqual(extract_number_en_v2(
+            "two million five hundred thousand tons of spinning metal"),
+            2500000)
+        self.assertEqual(extract_number_en_v2("six trillion"), 6000000000000.0)
+        self.assertEqual(extract_number_en_v2("six trillion",
+                                              short_scale=False), 6e+18)
+        self.assertEqual(extract_number_en_v2("one point five"), 1.5)
+        self.assertEqual(extract_number_en_v2("three dot fourteen"), 3.14)
+        self.assertEqual(extract_number_en_v2("zero point two"), 0.2)
+        self.assertEqual(extract_number_en_v2("billions of years older"),
+                         1000000000.0)
+        self.assertEqual(extract_number_en_v2(
+            "billions of years older", short_scale=False), 1000000000000.0)
+        self.assertEqual(extract_number_en_v2("one hundred thousand"), 100000)
+
+        self.assertEqual(extract_number_en_v2("negative seventy"), -70)
+        self.assertEqual(extract_number_en_v2("thousand million"), 1000000000)
+
+        # Verify non-power multiples of ten no longer discard
+        # adjacent multipliers
+        self.assertEqual(extract_number_en_v2("twenty thousand"), 20000)
+        self.assertEqual(extract_number_en_v2("fifty million"), 50000000)
+
+        # Verify smaller powers of ten no longer cause miscalculation of larger
+        # powers of ten (see MycroftAI#86)
+        self.assertEqual(extract_number_en_v2("twenty billion three hundred million \
+                                        nine hundred fifty thousand six hundred \
+                                        seventy five point eight"),
+                         20300950675.8)
+        self.assertEqual(extract_number_en_v2("nine hundred ninety nine million nine \
+                                        hundred ninety nine thousand nine \
+                                        hundred ninety nine point nine"),
+                         999999999.9)
+
+        # TODO why does "trillion" result in xxxx.0?
+        self.assertEqual(extract_number_en_v2("eight hundred trillion two hundred \
+                                        fifty seven"), 800000000000257.0)
+
+        # TODO handle this case
+        # self.assertEqual(
+        #    extract_number_en_v2("6 dot six six six"),
+        #    6.666)
+
+    def test_extract_no_number(self):
+        self.assertTrue(
+            extract_number_en_v2("The tennis player is fast") is False)
+        self.assertTrue(extract_number_en_v2("fraggle") is False)
+
+        self.assertTrue(extract_number_en_v2("grobo 0") is not False)
+        self.assertEqual(extract_number_en_v2("grobo 0"), 0)
+
+        self.assertTrue(extract_number_en_v2("fraggle zero") is not False)
+        self.assertEqual(extract_number_en_v2("fraggle zero"), 0)
+
+    def test_extract_couple_number(self):
+        # TODO FIXME
+        self.assertEqual(extract_number_en_v2("a couple of beers"), 2)
+        self.assertEqual(extract_number_en_v2("a couple hundred beers"), 200)
+        self.assertEqual(extract_number_en_v2("a couple thousand beers"), 2000)
 
 
 if __name__ == "__main__":

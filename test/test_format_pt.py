@@ -16,7 +16,7 @@
 
 import unittest
 import datetime
-
+from lingua_nostra.parse import extract_number_spans
 from lingua_nostra import load_language, unload_language, set_default_lang
 from lingua_nostra.format import nice_time
 from lingua_nostra.format import pronounce_number
@@ -61,6 +61,16 @@ NUMBERS_FIXTURE_PT = {
     0.05: 'um vigésimo'
 
 }
+
+
+class TestSpans(unittest.TestCase):
+    def test_number_spans(self):
+        self.assertEqual(extract_number_spans("este é o teste 1 2 3 666 1.5"),
+                         [(1, (15, 16)),
+                          (2, (17, 18)),
+                          (3, (19, 20)),
+                          (666, (21, 24)),
+                          (1.5, (25, 28))])
 
 
 class TestPronounceNumber(unittest.TestCase):
