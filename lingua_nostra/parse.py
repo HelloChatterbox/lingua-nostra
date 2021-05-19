@@ -21,6 +21,8 @@ from lingua_nostra.internal import populate_localized_function_dict, \
     get_active_langs, get_full_lang_code, get_primary_lang_code, \
     get_default_lang, localized_function, FunctionNotLocalizedError
 from quantulum3 import parser as quantity_parser
+from lingua_nostra.lang.parse_common import ROMAN_NUMERALS
+from quebra_frases import span_indexed_empty_space_tokenize
 
 
 _REGISTERED_FUNCTIONS = ("extract_numbers",
@@ -46,6 +48,56 @@ def normalize_decimals(text, decimal, lang=""):
         text = text.replace(match.group(
             0), match.group(0).replace(decimal, '.'))
     return text
+
+
+def roman_to_int(word):
+    if not is_roman_numeral(word):
+        return None
+    number = 0
+    for i in range(len(word)):
+        if i > 0 and ROMAN_NUMERALS[word[i]] > ROMAN_NUMERALS[word[i - 1]]:
+            number += ROMAN_NUMERALS[word[i]] - 2 * ROMAN_NUMERALS[word[i - 1]]
+        else:
+            number += ROMAN_NUMERALS[word[i]]
+    return number
+
+
+def is_roman_numeral(word):
+    return all(char in ROMAN_NUMERALS for char in word)
+
+
+def extract_roman_numeral_spans(utterance):
+    """
+    This function tags roman numerals in an utterance.
+
+    Args:
+        utterance (str): the string to normalize
+    Returns:
+        (list): list of tuples with detected number and span of the
+                number in parent utterance [(number, (start_idx, end_idx))]
+
+    """
+    spans = span_indexed_empty_space_tokenize(utterance)
+    return [(roman_to_int(word), (start, end)) for start, end, word in spans
+            if is_roman_numeral(word)]
+
+
+@localized_function(run_own_code_on=[FunctionNotLocalizedError])
+def normalize_roman_numerals(utterance, ordinals=False, lang=""):
+    # localization might be needed for ordinals flag
+    norm_utt = utterance
+    for num, (start, end) in reversed(extract_roman_numeral_spans(utterance)):
+        if ordinals:
+            if str(num)[-1] == "1":
+                num = f"{num}st"
+            elif str(num)[-1] == "2":
+                num = f"{num}nd"
+            elif str(num)[-1] == "3":
+                num = f"{num}rd"
+            else:
+                num = f"{num}th"
+        norm_utt = norm_utt[:start] + f"{num}" + norm_utt[end:]
+    return norm_utt
 
 
 @localized_function(run_own_code_on=[FunctionNotLocalizedError])
