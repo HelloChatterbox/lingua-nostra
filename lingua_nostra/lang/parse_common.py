@@ -15,6 +15,57 @@
 #
 from collections import namedtuple
 import re
+import enum
+
+from simple_NER.annotators.locations_ner import LocationNER, CitiesNER
+from simple_NER.annotators.names_ner import NamesNER
+from simple_NER.annotators.units_ner import UnitsNER
+
+
+class EntityType(str, enum.Enum):
+    KEYWORD = "keyword"
+    ENTITY = "entity"
+    QUANTITY = "quantity"
+    DATETIME = "datetime"
+    LOCATION = "location"
+
+
+DEFAULT_NER_DETECTORS = {
+    EntityType.ENTITY: [NamesNER()],
+    EntityType.LOCATION: [LocationNER()],
+    EntityType.QUANTITY: [UnitsNER()]
+}
+
+
+def extract_entities_generic(utterance, detectors=None, raw=False, min_conf=0.45):
+    detectors = detectors or DEFAULT_NER_DETECTORS
+    entities = {}
+    for entity_type, taggers in detectors.items():
+        for ner in taggers:
+            for e in ner.extract_entities(utterance):
+                entity = e.as_json()
+                if entity["confidence"] < min_conf:
+                    continue
+                if not raw:
+                    entity = {
+                        "span": entity["spans"][0],
+                        "confidence": entity["confidence"],
+                        "entity_type": entity_type,
+                        "value": entity["value"]
+                    }
+                else:
+                    entity["entity_type"] = entity_type
+                if entity["value"].lower() in entities:
+                    if entity["confidence"] >= \
+                            entities[entity["value"].lower()]["confidence"]:
+                        entities[entity["value"].lower()] = entity
+                else:
+                    entities[entity["value"].lower()] = entity
+
+    if raw:
+        return sorted([e for e in entities.values()],
+                      key=lambda k: k["spans"][0][0])
+    return sorted([e for e in entities.values()], key=lambda k: k["span"][0])
 
 
 class Normalizer:

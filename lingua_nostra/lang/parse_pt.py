@@ -32,6 +32,22 @@ from lingua_nostra.time import now_local
 from lingua_nostra.parse import normalize_decimals
 import json
 import re
+from simple_NER.annotators.keyword_ner import KeywordNER
+from simple_NER.annotators.locations_ner import CitiesNER, LocationNER
+from simple_NER.annotators.names_ner import NamesNER
+from lingua_nostra.lang.parse_common import EntityType, \
+    extract_entities_generic
+
+_NER_DETECTORS_PT = {
+    EntityType.KEYWORD: [KeywordNER(lang="pt")],
+    EntityType.ENTITY: [NamesNER()],
+    EntityType.LOCATION: [CitiesNER(), LocationNER()]
+}
+
+
+def extract_entities_pt(utterance, raw=False, min_conf=0.45):
+    return extract_entities_generic(utterance, detectors=_NER_DETECTORS_PT,
+                                    raw=raw, min_conf=min_conf)
 
 
 def is_fractional_pt(input_str, short_scale=True):
@@ -292,13 +308,13 @@ def extract_datetime_pt(text, anchorDate=None, default_time=None):
 
     def date_found():
         return found or \
-            (
-                datestr != "" or timeStr != "" or
-                yearOffset != 0 or monthOffset != 0 or
-                dayOffset is True or hrOffset != 0 or
-                hrAbs or minOffset != 0 or
-                minAbs or secOffset != 0
-            )
+               (
+                       datestr != "" or timeStr != "" or
+                       yearOffset != 0 or monthOffset != 0 or
+                       dayOffset is True or hrOffset != 0 or
+                       hrAbs or minOffset != 0 or
+                       minAbs or secOffset != 0
+               )
 
     if text == "":
         return None
@@ -836,10 +852,10 @@ def extract_datetime_pt(text, anchorDate=None, default_time=None):
                         used = 1
                     elif (int(word) > 100 and
                           (
-                        wordPrev == "o" or
-                        wordPrev == "oh" or
-                        wordPrev == "zero"
-                    )):
+                                  wordPrev == "o" or
+                                  wordPrev == "oh" or
+                                  wordPrev == "zero"
+                          )):
                         # 0800 hours (pronounced oh-eight-hundred)
                         strHH = int(word) / 100
                         strMM = int(word) - strHH * 100
@@ -850,8 +866,8 @@ def extract_datetime_pt(text, anchorDate=None, default_time=None):
                             wordNext == "hora" and
                             word[0] != '0' and
                             (
-                                int(word) < 100 and
-                                int(word) > 2400
+                                    int(word) < 100 and
+                                    int(word) > 2400
                             )):
                         # ignores military time
                         # "in 3 hours"

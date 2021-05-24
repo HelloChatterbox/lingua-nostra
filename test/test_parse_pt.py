@@ -22,6 +22,7 @@ from lingua_nostra.parse import extract_datetime
 from lingua_nostra.parse import extract_number
 from lingua_nostra.parse import normalize
 from lingua_nostra.time import default_timezone
+from lingua_nostra.parse import extract_entities, EntityType
 
 
 def setUpModule():
@@ -50,7 +51,8 @@ class TestNormalize(unittest.TestCase):
             "outro teste")
         self.assertEqual(normalize("isto é o teste extra",
                                    lang="pt",
-                                   remove_articles=False), "isto é o teste extra")
+                                   remove_articles=False),
+                         "isto é o teste extra")
 
     def test_extractnumber_pt(self):
         self.assertEqual(extract_number("isto e o primeiro teste", lang="pt"),
@@ -279,6 +281,33 @@ class TestExtractGender(unittest.TestCase):
         self.assertEqual(get_gender("ponte", lang="pt"), None)
         self.assertEqual(get_gender("ponte", "essa ponte caiu",
                                     lang="pt"), "f")
+
+
+class TestNER(unittest.TestCase):
+    def test_extract_entities(self):
+        self.assertEqual(extract_entities("Portugal nasceu em Guimarães mas "
+                                          "a capital é Lisboa"),
+                         [{'confidence': 0.9,
+                           'entity_type': EntityType.LOCATION,
+                           'span': (0, 8),
+                           'value': 'Portugal'},
+                          {'confidence': 0.7,
+                           'entity_type': EntityType.LOCATION,
+                           'span': (19, 28),
+                           'value': 'Guimarães'},
+                          {'confidence': 0.8,
+                           'entity_type': EntityType.ENTITY,
+                           'span': (45, 51),
+                           'value': 'Lisboa'}])
+
+        self.assertEqual(extract_entities("se sentes falta do Salazar, "
+                                          "junta te a ele!"),
+                         [
+                             {'confidence': 0.8,
+                              'entity_type': EntityType.ENTITY,
+                              'span': (19, 26),
+                              'value': 'Salazar'}]
+                         )
 
 
 if __name__ == "__main__":

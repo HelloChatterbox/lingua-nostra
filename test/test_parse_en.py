@@ -27,6 +27,7 @@ from lingua_nostra.parse import get_gender
 from lingua_nostra.parse import match_one
 from lingua_nostra.parse import normalize
 from lingua_nostra.parse import extract_quantities
+from lingua_nostra.parse import extract_entities, EntityType
 
 
 def setUpModule():
@@ -1109,6 +1110,75 @@ class TestQuantulum(unittest.TestCase):
               'uncertainty': 0.09999999999999964,
               'unit': 'teraelectron volt',
               'value': 12.9}]
+        )
+
+
+class TestNER(unittest.TestCase):
+    def test_extract_entities(self):
+        self.assertEqual(extract_entities("I want 2 liters of wine"),
+                         [{'confidence': 1,
+                           'entity_type': EntityType.QUANTITY,
+                           'span': (7, 15),
+                           'value': '2 liters'},
+                          {'confidence': 0.5,
+                           'entity_type': EntityType.KEYWORD,
+                           'span': (19, 23),
+                           'value': 'wine'}
+                          ])
+
+        self.assertEqual(extract_entities("How is the weather in London"),
+                         [{'confidence': 0.5,
+                           'entity_type': EntityType.KEYWORD,
+                           'span': (11, 18),
+                           'value': 'weather'},
+                          {'confidence': 0.9,
+                           'entity_type': EntityType.LOCATION,
+                           'span': (22, 28),
+                           'value': 'London'}
+                          ])
+
+        self.assertEqual(extract_entities("Mark Zuckerberg is not human"),
+                         [{'confidence': 0.8,
+                           'entity_type': EntityType.ENTITY,
+                           'span': (0, 15),
+                           'value': 'Mark Zuckerberg'}
+                          ])
+
+    def test_raw(self):
+        self.assertEqual(
+            extract_entities("London and Lisbon are capital cities",
+                             raw=True),
+            [{'confidence': 0.9,
+              'data': {'country_code': 'GB',
+                       'country_name': 'United Kingdom',
+                       'hemisphere': 'north',
+                       'latitude': 54,
+                       'longitude': -2,
+                       'name': 'London'},
+              'entity_type': EntityType.LOCATION,
+              'rules': [],
+              'source_text': 'London and Lisbon are capital cities',
+              'spans': [(0, 6)],
+              'value': 'London'},
+             {'confidence': 0.9,
+              'data': {'country_code': 'PT',
+                       'country_name': 'Portugal',
+                       'hemisphere': 'north',
+                       'latitude': 39.5,
+                       'longitude': -8,
+                       'name': 'Lisbon'},
+              'entity_type': EntityType.LOCATION,
+              'rules': [],
+              'source_text': 'London and Lisbon are capital cities',
+              'spans': [(11, 17)],
+              'value': 'Lisbon'},
+             {'confidence': 0.6666666666666666,
+              'data': {'score': 4.0},
+              'entity_type': EntityType.KEYWORD,
+              'rules': [],
+              'source_text': 'London and Lisbon are capital cities',
+              'spans': [(22, 36)],
+              'value': 'capital cities'}]
         )
 
 

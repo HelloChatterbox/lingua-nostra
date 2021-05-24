@@ -21,6 +21,7 @@ from lingua_nostra.internal import populate_localized_function_dict, \
     get_active_langs, get_full_lang_code, get_primary_lang_code, \
     get_default_lang, localized_function, FunctionNotLocalizedError
 from quantulum3 import parser as quantity_parser
+from lingua_nostra.lang.parse_common import extract_entities_generic, EntityType
 
 
 _REGISTERED_FUNCTIONS = ("extract_numbers",
@@ -28,11 +29,21 @@ _REGISTERED_FUNCTIONS = ("extract_numbers",
                          "extract_duration",
                          "extract_datetime",
                          "normalize",
+                         "extract_entities",
                          "get_gender",
                          "is_fractional",
                          "is_ordinal")
 
 populate_localized_function_dict("parse", langs=get_active_langs())
+
+
+@localized_function(run_own_code_on=[FunctionNotLocalizedError])
+def extract_entities(text, raw=False, lang=""):
+    # generic extractor using:
+    # - regex for Nouns
+    # - country/capital_city name wordlist
+    # - quantulum3 for quantity/units extraction
+    return extract_entities_generic(text, raw=raw)
 
 
 @localized_function(run_own_code_on=[FunctionNotLocalizedError])
