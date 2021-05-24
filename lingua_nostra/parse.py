@@ -30,6 +30,7 @@ _REGISTERED_FUNCTIONS = ("extract_numbers",
                          "extract_datetime",
                          "normalize",
                          "extract_entities",
+                         "extract_query",
                          "get_gender",
                          "is_fractional",
                          "is_ordinal")
@@ -38,12 +39,60 @@ populate_localized_function_dict("parse", langs=get_active_langs())
 
 
 @localized_function(run_own_code_on=[FunctionNotLocalizedError])
-def extract_entities(text, raw=False, lang=""):
+def extract_entities(text, raw=False, min_conf=0.45, lang=""):
     # generic extractor using:
     # - regex for Nouns
     # - country/capital_city name wordlist
     # - quantulum3 for quantity/units extraction
-    return extract_entities_generic(text, raw=raw)
+    return extract_entities_generic(text, raw=raw, min_conf=min_conf)
+
+
+@localized_function(run_own_code_on=[FunctionNotLocalizedError])
+def extract_query(text, raw=False, min_conf=0.3, best_entity=False, lang=""):
+
+    entities = extract_entities(text, raw, min_conf=min_conf, lang=lang)
+
+    # HACK - workaround lowercasing bug in Noun NER
+    messed_entities = [e for e in entities if e["value"] not in text]
+    entities = [e for e in entities if e not in messed_entities]
+    # fix the string value
+    for idx, entity in enumerate(messed_entities):
+        start, end = entity["span"]
+        messed_entities[idx]["value"] = text[start:end]
+    entities += messed_entities
+    # /END HACK
+
+    # remove duplicate detections
+    if not best_entity:
+        span_start_counts = {e["span"][0]: [] for e in entities}
+        for ent in entities:
+            span_start_counts[ent["span"][0]] += [ent]
+        overlaping_spans = {k: v for k, v in span_start_counts.items()
+                            if len(v) > 1}
+        smaller_overlaps = [min(v, key=lambda x: x["span"][1])
+                            for k, v in overlaping_spans.items()]
+        entities = [e for e in entities if e not in smaller_overlaps]
+
+    # create a query from keywords
+    best = {"value": text, "entities": entities}
+    if len(entities) > 1 and best_entity:
+        # give preference to entity type
+        if any((e["entity_type"] == EntityType.ENTITY for e in entities)):
+            entities = [e for e in entities if e["entity_type"] == EntityType.ENTITY]
+        # choose highest confidence
+        best_conf = max(entities, key=lambda k: k["confidence"])["confidence"]
+        # choose the longest entity
+        entities = sorted([e for e in entities if e["confidence"] == best_conf],
+                          key=lambda k: len(k["value"]), reverse=True)
+        best = entities[0]
+
+    elif len(entities) == 1:
+        best["value"] = entities[0]["value"]
+    elif len(entities) > 1:
+        best["value"] = " ".join([e["value"] for e in entities])
+    if raw:
+        return best
+    return best["value"]
 
 
 @localized_function(run_own_code_on=[FunctionNotLocalizedError])
