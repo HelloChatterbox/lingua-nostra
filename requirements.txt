@@ -1,2 +1,2 @@
 quantulum3
-simple_NER>=0.8.2a1
+simple_NER>=0.8.2a2

@@ -25,18 +25,20 @@ from lingua_nostra.lang.common_data_en import _ARTICLES_EN, _NUM_STRING_EN, \
     _NEGATIVES_EN, _SUMS_EN, _MULTIPLIES_LONG_SCALE_EN, \
     _MULTIPLIES_SHORT_SCALE_EN, _FRACTION_MARKER_EN, _DECIMAL_MARKER_EN, \
     _STRING_NUM_EN, _STRING_SHORT_ORDINAL_EN, _STRING_LONG_ORDINAL_EN, \
-    _FRACTION_STRING_EN, _generate_plurals_en, _SPOKEN_EXTRA_NUM_EN
+    _FRACTION_STRING_EN, _generate_plurals_en, _SPOKEN_EXTRA_NUM_EN, \
+    _QUESTION_RULES_EN
 
 import re
 import json
 from lingua_nostra.internal import resolve_resource_file
 from lingua_nostra.parse import normalize_decimals
 from lingua_nostra.lang.parse_common import EntityType, \
-    extract_entities_generic
+    extract_entities_generic, QuestionParser, QuestionType, QuestionSubType
 from simple_NER.annotators.keyword_ner import KeywordNER
 from simple_NER.annotators.locations_ner import LocationNER, CitiesNER
 from simple_NER.annotators.names_ner import NamesNER
 from simple_NER.annotators.units_ner import UnitsNER
+from simple_NER.rules import RuleNER
 
 _NER_DETECTORS_EN = {
     EntityType.KEYWORD: [KeywordNER(lang="en")],
@@ -59,6 +61,25 @@ def extract_entities_en(utterance, raw=False, min_conf=0.45):
         if ent["value"].lower() in ["what", "how", "when", "who"]:
             entities[idx] = None
     return [e for e in entities if e]
+
+
+class QuestionParserEN(QuestionParser):
+
+    @staticmethod
+    def get_matchers():
+        _MATCHERS_EN = {}
+        for r, samples in _QUESTION_RULES_EN.items():
+            ner = RuleNER()
+            samples = [s.lower().rstrip(" ?").replace(" 's", "'s")
+                       for s in samples]
+            samples += ["* " + s for s in samples if not s.startswith("*")]
+            ner.add_rule(r.value, samples)
+            _MATCHERS_EN[r] = ner
+        return _MATCHERS_EN
+
+
+def predict_question_type_en(utterance):
+    return QuestionParserEN().predict_question_type(utterance)
 
 
 def _convert_words_to_numbers_en(text, short_scale=True, ordinals=False):

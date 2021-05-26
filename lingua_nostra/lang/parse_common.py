@@ -16,10 +16,10 @@
 from collections import namedtuple
 import re
 import enum
+from quebra_frases import word_tokenize
 
-from simple_NER.annotators.locations_ner import LocationNER, CitiesNER
 from simple_NER.annotators.names_ner import NamesNER
-from simple_NER.annotators.units_ner import UnitsNER
+
 
 
 class EntityType(str, enum.Enum):
@@ -30,14 +30,105 @@ class EntityType(str, enum.Enum):
     LOCATION = "location"
 
 
+class QuestionType(str, enum.Enum):
+    ABBREVIATION = "ABBR"
+    DESCRIPTION = "DESC"
+    ENTITY = "ENTY"
+    HUMAN = "HUM"
+    LOCATION = "LOC"
+    NUMERIC = "NUM"
+
+
+class QuestionSubType(str, enum.Enum):
+    ABBREVIATION_EXPLANATION = "ABBR:exp"
+    ABBREVIATION = "ABBR:abb"
+
+    DESCRIPTION = "DESC:desc"
+    DESCRIBE_REASON = "DESC:reason"
+    DESCRIPTION_DEFINITION = "DESC:def"
+    DESCRIBE_MANNER = "DESC:manner"
+
+    NUMERIC_COUNT = "NUM:count"
+    NUMERIC_DATE = "NUM:date"
+    NUMERIC_PERIOD = "NUM:period"
+    NUMERIC_DISTANCE = "NUM:dist"
+    NUMERIC_WEIGHT = "NUM:weight"
+    NUMERIC_TEMPERATURE = "NUM:temp"
+    NUMERIC_SPEED = "NUM:speed"
+    NUMERIC_OTHER = "NUM:other"
+    NUMERIC_MONEY = "NUM:money"
+    NUMERIC_PERCENTAGE = "NUM:perc"
+    NUMERIC_VOLSIZE = "NUM:volsize"
+    NUMERIC_ORDINAL = "NUM:ord"
+
+    ENTITY_CURRENCY = "ENTY:currency"
+    ENTITY_PLANT = "ENTY:plant"
+    ENTITY_ANIMAL = "ENTY:animal"
+    ENTITY_VEHICLE = "ENTY:veh"
+    ENTITY_FOOD = "ENTY:food"
+    ENTITY_COLOR = "ENTY:color"
+    ENTITY_BODY_PART = "ENTY:body"
+    ENTITY_INSTRUMENT = "ENTY:instru"
+    ENTITY_TECHNIQUE = "ENTY:techmeth"
+    ENTITY_SYMBOL = "ENTY:symbol"
+    ENTITY_LETTER = "ENTY:letter"
+    ENTITY_LANG = "ENTY:lang"
+    ENTITY_WORD = "ENTY:word"
+    ENTITY_SUBSTANCE = "ENTY:substance"
+    ENTITY_SPORT = "ENTY:sport"
+    ENTITY_RELIGION = "ENTY:religion"
+    ENTITY_PRODUCT = "ENTY:product"
+    ENTITY_EQUIVALENT_TERM = "ENTY:termeq"
+    ENTITY_OTHER = "ENTY:other"
+    ENTITY_EVENT = "ENTY:event"
+    ENTITY_MEDICAL = "ENTY:dismed"
+    ENTITY_MATERIAL_CREATION = "ENTY:cremat"
+
+    HUMAN_INDIVIDUAL = "HUM:ind"
+    HUMAN_TITLE = "HUM:title"
+    HUMAN_DESCRIPTION = "HUM:desc"
+    HUMAN_GROUP = "HUM:gr"
+
+    LOCATION_CITY = "LOC:city"
+    LOCATION_COUNTRY = "LOC:country"
+    LOCATION_STATE = "LOC:state"
+    LOCATION_MOUNTAIN = "LOC:mount"
+    LOCATION_OTHER = "LOC:other"
+
+
 DEFAULT_NER_DETECTORS = {
     EntityType.ENTITY: [NamesNER()],
-    EntityType.LOCATION: [LocationNER()],
-    EntityType.QUANTITY: [UnitsNER()]
+    EntityType.LOCATION: [],
+    EntityType.QUANTITY: []
 }
 
 
-def extract_entities_generic(utterance, detectors=None, raw=False, min_conf=0.45):
+class QuestionParser:
+    _lang_matchers = {}
+
+    def __init__(self):
+        self._load_matchers()
+
+    @staticmethod
+    def get_matchers():
+        raise NotImplementedError
+
+    @classmethod
+    def _load_matchers(cls):
+        if not cls._lang_matchers:
+            cls._lang_matchers = cls.get_matchers()
+
+    def predict_question_type(self, utterance):
+        preds = []
+        for pred, ner in self._lang_matchers.items():
+            for ent in ner.extract_entities(utterance.lower().rstrip(" ?")):
+                preds.append(pred)
+                break
+        return preds
+
+
+def extract_entities_generic(utterance, detectors=None,
+                             raw=False, min_conf=0.45):
     detectors = detectors or DEFAULT_NER_DETECTORS
     entities = {}
     for entity_type, taggers in detectors.items():
@@ -246,6 +337,7 @@ class Normalizer:
 # this module. The parsing requires slicing and dividing of the original
 # text. To ensure things parse correctly, we need to know where text came
 # from in the original input, hence this nametuple.
+# TODO deprecate in favor of span methods
 Token = namedtuple('Token', 'word index')
 
 
