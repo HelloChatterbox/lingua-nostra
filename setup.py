@@ -27,7 +27,7 @@ with open("readme.md", "r") as fh:
 
 setup(
     name='lingua_nostra',
-    version='0.4.3',
+    version='0.4.4',
     packages=['lingua_nostra', 'lingua_nostra.lang'],
     url='https://github.com/HelloChatterbox/lingua-nostra',
     license='Apache2.0',

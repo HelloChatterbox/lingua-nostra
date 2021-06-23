@@ -16,6 +16,7 @@
 import json
 import unittest
 import datetime
+from dateutil import tz
 import ast
 import warnings
 import sys
@@ -38,6 +39,8 @@ from lingua_nostra.format import join_list
 from lingua_nostra.format import nice_bytes
 from lingua_nostra.format import pronounce_digits
 from lingua_nostra.format import nice_units, expand_units
+from lingua_nostra.time import default_timezone, set_default_tz, now_local, \
+    to_local
 
 
 def setUpModule():
@@ -80,6 +83,36 @@ NUMBERS_FIXTURE_EN = {
     7.421: '7 and 8 nineteenths',
     0.05: 'a twentyith'
 }
+
+
+class TestTimezones(unittest.TestCase):
+    def test_default_tz(self):
+        set_default_tz("America/Chicago")
+
+        local_time = now_local()
+        local_tz = default_timezone()
+        us_time = datetime.datetime.now(tz=tz.gettz("America/Chicago"))
+        self.assertEqual(nice_date_time(local_time),
+                         nice_date_time(us_time))
+        self.assertEqual(local_time.tzinfo, local_tz)
+
+        # naive datetimes assumed to be in default timezone already!
+        # in the case of datetime.now this corresponds to tzlocal()
+        # otherwise timezone is undefined and can not be guessed, we assume
+        # the user means "my timezone" and that LN was configured to use it
+        # beforehand, if unconfigured default == tzlocal()
+        dt = datetime.datetime(2021, 6, 23, 00, 43, 39)
+        dt_local = to_local(dt)
+        self.assertEqual(nice_time(dt), nice_time(dt_local))
+
+    def test_tz_conversion(self):
+        naive = datetime.datetime.now()
+        system_time = datetime.datetime.now(tz.tzlocal())
+        # naive == datetime.now() == tzlocal() internally
+        # NOTE nice_date_time is not a localized function, it just formats
+        # the datetime object directly
+        self.assertEqual(nice_date_time(naive),
+                         nice_date_time(system_time))
 
 
 class TestNiceNumberFormat(unittest.TestCase):
@@ -437,10 +470,6 @@ class TestPronounceNumber(unittest.TestCase):
                                                               "trillionth")
 
 
-# def nice_time(dt, lang="en-us", speech=True, use_24hour=False,
-#              use_ampm=False):
-
-
 class TestNiceDateFormat(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -456,7 +485,7 @@ class TestNiceDateFormat(unittest.TestCase):
 
     def test_convert_times(self):
         dt = datetime.datetime(2017, 1, 31,
-                               13, 22, 3)
+                               13, 22, 3, tzinfo=default_timezone())
 
         # Verify defaults haven't changed
         self.assertEqual(nice_time(dt),
@@ -481,7 +510,7 @@ class TestNiceDateFormat(unittest.TestCase):
                          "thirteen twenty two")
 
         dt = datetime.datetime(2017, 1, 31,
-                               13, 0, 3)
+                               13, 0, 3, tzinfo=default_timezone())
         self.assertEqual(nice_time(dt),
                          "one o'clock")
         self.assertEqual(nice_time(dt, use_ampm=True),
@@ -501,7 +530,7 @@ class TestNiceDateFormat(unittest.TestCase):
                          "thirteen hundred")
 
         dt = datetime.datetime(2017, 1, 31,
-                               13, 2, 3)
+                               13, 2, 3, tzinfo=default_timezone())
         self.assertEqual(nice_time(dt),
                          "one oh two")
         self.assertEqual(nice_time(dt, use_ampm=True),
@@ -521,7 +550,7 @@ class TestNiceDateFormat(unittest.TestCase):
                          "thirteen zero two")
 
         dt = datetime.datetime(2017, 1, 31,
-                               0, 2, 3)
+                               0, 2, 3, tzinfo=default_timezone())
         self.assertEqual(nice_time(dt),
                          "twelve oh two")
         self.assertEqual(nice_time(dt, use_ampm=True),
@@ -541,7 +570,7 @@ class TestNiceDateFormat(unittest.TestCase):
                          "zero zero zero two")
 
         dt = datetime.datetime(2018, 2, 8,
-                               1, 2, 33)
+                               1, 2, 33, tzinfo=default_timezone())
         self.assertEqual(nice_time(dt),
                          "one oh two")
         self.assertEqual(nice_time(dt, use_ampm=True),
@@ -561,14 +590,14 @@ class TestNiceDateFormat(unittest.TestCase):
                          "zero one zero two")
 
         dt = datetime.datetime(2017, 1, 31,
-                               12, 15, 9)
+                               12, 15, 9, tzinfo=default_timezone())
         self.assertEqual(nice_time(dt),
                          "quarter past twelve")
         self.assertEqual(nice_time(dt, use_ampm=True),
                          "quarter past twelve p.m.")
 
         dt = datetime.datetime(2017, 1, 31,
-                               5, 30, 00)
+                               5, 30, 00, tzinfo=default_timezone())
         self.assertEqual(nice_time(dt, use_ampm=True),
                          "half past five a.m.")
 
@@ -586,9 +615,11 @@ class TestNiceDateFormat(unittest.TestCase):
                 dp = ast.literal_eval(p['datetime_param'])
                 np = ast.literal_eval(p['now'])
                 dt = datetime.datetime(
-                    dp[0], dp[1], dp[2], dp[3], dp[4], dp[5])
+                    dp[0], dp[1], dp[2], dp[3], dp[4], dp[5],
+                    tzinfo=default_timezone())
                 now = None if not np else datetime.datetime(
-                    np[0], np[1], np[2], np[3], np[4], np[5])
+                    np[0], np[1], np[2], np[3], np[4], np[5],
+                    tzinfo=default_timezone())
                 print('Testing for ' + lang + ' that ' + str(dt) +
                       ' is date ' + p['assertEqual'])
                 self.assertEqual(p['assertEqual'],
@@ -598,7 +629,8 @@ class TestNiceDateFormat(unittest.TestCase):
         # test all days in a year for all languages,
         # that some output is produced
         for lang in self.test_config:
-            for dt in (datetime.datetime(2017, 12, 30, 0, 2, 3) +
+            for dt in (datetime.datetime(2017, 12, 30, 0, 2, 3,
+                                         tzinfo=default_timezone()) +
                        datetime.timedelta(n) for n in range(368)):
                 self.assertTrue(len(nice_date(dt, lang=lang)) > 0)
 
@@ -615,9 +647,11 @@ class TestNiceDateFormat(unittest.TestCase):
                 dp = ast.literal_eval(p['datetime_param'])
                 np = ast.literal_eval(p['now'])
                 dt = datetime.datetime(
-                    dp[0], dp[1], dp[2], dp[3], dp[4], dp[5])
+                    dp[0], dp[1], dp[2], dp[3], dp[4], dp[5],
+                    tzinfo=default_timezone())
                 now = None if not np else datetime.datetime(
-                    np[0], np[1], np[2], np[3], np[4], np[5])
+                    np[0], np[1], np[2], np[3], np[4], np[5],
+                    tzinfo=default_timezone())
                 print('Testing for ' + lang + ' that ' + str(dt) +
                       ' is date time ' + p['assertEqual'])
                 self.assertEqual(
@@ -637,7 +671,8 @@ class TestNiceDateFormat(unittest.TestCase):
                 p = self.test_config[lang]['test_nice_year'][str(i)]
                 dp = ast.literal_eval(p['datetime_param'])
                 dt = datetime.datetime(
-                    dp[0], dp[1], dp[2], dp[3], dp[4], dp[5])
+                    dp[0], dp[1], dp[2], dp[3], dp[4], dp[5],
+                    tzinfo=default_timezone())
                 print('Testing for ' + lang + ' that ' + str(dt) +
                       ' is year ' + p['assertEqual'])
                 self.assertEqual(p['assertEqual'], nice_year(
@@ -649,7 +684,8 @@ class TestNiceDateFormat(unittest.TestCase):
         for lang in self.test_config:
             print("Test all years in " + lang)
             for i in range(1, 9999):
-                dt = datetime.datetime(i, 1, 31, 13, 2, 3)
+                dt = datetime.datetime(i, 1, 31, 13, 2, 3,
+                                       tzinfo=default_timezone())
                 self.assertTrue(len(nice_year(dt, lang=lang)) > 0)
                 # Looking through the date sequence can be helpful
 

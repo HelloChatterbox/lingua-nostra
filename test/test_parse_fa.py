@@ -17,12 +17,11 @@ import unittest
 from datetime import datetime, timedelta
 
 from lingua_nostra import load_language, unload_language, set_default_lang
-from lingua_nostra.internal import FunctionNotLocalizedError
 from lingua_nostra.parse import extract_datetime
 from lingua_nostra.parse import extract_duration
 from lingua_nostra.parse import extract_number, extract_numbers
-from lingua_nostra.time import default_timezone
 from lingua_nostra.parse import normalize
+from lingua_nostra.time import default_timezone
 
 
 def setUpModule():
@@ -35,7 +34,7 @@ def tearDownModule():
     unload_language('fa')
 
 
-class TestNormalize(unittest.TestCase):
+class TestNumbers(unittest.TestCase):
 
     def test_extract_number(self):
         # self.assertEqual(extract_number("این تست اول است",
@@ -73,6 +72,16 @@ class TestNormalize(unittest.TestCase):
         self.assertEqual(extract_number("دو میلیون و پانصد هزار "
                                         "تن گوشت یخ زده"), 2500000)
 
+    def test_multiple_numbers(self):
+        self.assertEqual(extract_numbers("یک دو سه"),
+                         [1.0, 2.0, 3.0])
+        self.assertEqual(
+            extract_numbers("ده بیست سه پونزده هزار و شصت و شونزده"),
+            [10, 20, 3, 15060, 16])
+
+
+class TestDuration(unittest.TestCase):
+
     def test_extract_duration_farsi(self):
         self.assertEqual(extract_duration("10 ثانیه"),
                          (timedelta(seconds=10.0), ""))
@@ -102,9 +111,13 @@ class TestNormalize(unittest.TestCase):
             (timedelta(hours=1, minutes=57.5),
              "این فیلم طول می کشد"))
 
+
+class TestDatetime(unittest.TestCase):
+
     def test_extractdatetime_farsi(self):
         def extractWithFormat(text):
-            date = datetime(2017, 6, 27, 13, 4, tzinfo=default_timezone())  # Tue June 27, 2017 @ 1:04pm
+            date = datetime(2017, 6, 27, 13, 4,
+                            tzinfo=default_timezone())  # Tue June 27, 2017 @ 1:04pm
             [extractedDate, leftover] = extract_datetime(text, date)
             extractedDate = extractedDate.strftime("%Y-%m-%d %H:%M:%S")
             return [extractedDate, leftover]
@@ -158,13 +171,6 @@ class TestNormalize(unittest.TestCase):
         #            "2017-06-28 22:00:00", "یادم بنداز که به مادرم زنگ بزنم")
         # TODO: This test is imperfect due to the "at 7:00" still in the
         #       remainder.  But let it pass for now since time is correct
-
-    def test_multiple_numbers(self):
-        self.assertEqual(extract_numbers("یک دو سه"),
-                         [1.0, 2.0, 3.0])
-        self.assertEqual(
-            extract_numbers("ده بیست سه پونزده هزار و شصت و شونزده"),
-            [10, 20, 3, 15060, 16])
 
 
 if __name__ == "__main__":
