@@ -133,3 +133,16 @@ def to_system(dt):
         # the user means "my timezone" and that LN was configured to use it
         # beforehand, if unconfigured default == tzlocal()
         return dt.replace(tzinfo=default_timezone()).astimezone(tz)
+
+
+def is_leap_year(year):
+    return (year % 400 == 0) or ((year % 4 == 0) and (year % 100 != 0))
+
+
+def get_next_leap_year(year):
+    next_year = year + 1
+    if is_leap_year(next_year):
+        return next_year
+    else:
+        return get_next_leap_year(next_year)
+
