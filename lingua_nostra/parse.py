@@ -34,8 +34,6 @@ _REGISTERED_FUNCTIONS = ("extract_numbers",
                          "is_fractional",
                          "is_ordinal")
 
-populate_localized_function_dict("parse", langs=get_active_langs())
-
 
 @localized_function(run_own_code_on=[FunctionNotLocalizedError])
 def normalize_decimals(text, decimal, lang=""):
@@ -369,3 +367,5 @@ def is_ordinal(input_str, lang=''):
         (bool) or (float): False if not an ordinal, otherwise the number
         corresponding to the ordinal
     """
+
+populate_localized_function_dict("parse", langs=get_active_langs())
