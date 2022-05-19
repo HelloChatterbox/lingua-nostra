@@ -5,7 +5,7 @@ language into data structures, and data structures into natural language!
 
 The main use case of lingua_nostra is handling dates and numbers
 
-Latest version: 0.4.3
+Latest version: 0.4.5
 
 ## Supported Languages
 
