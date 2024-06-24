@@ -39,9 +39,6 @@ _REGISTERED_FUNCTIONS = ("nice_number",
                          "nice_response",
                          "nice_duration")
 
-populate_localized_function_dict("format", langs=get_active_langs())
-
-
 @localized_function(run_own_code_on=[FunctionNotLocalizedError])
 def nice_units(utterance=None, lang=''):
     """  Format a unit to a pronouncable string
@@ -746,3 +743,5 @@ def nice_bytes(number, lang='', speech=True, binary=True, gnu=False):
             return "%3.1f %s" % (number, unit)
         number /= n
     return "%.1f %s" % (number, units[-1])
+
+populate_localized_function_dict("format", langs=get_active_langs())
